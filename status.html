@@ -6,18 +6,22 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { padding: 40px; background-color: #f1f3f5; font-family: 'Pretendard', sans-serif; }
-        .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: relative; }
         .badge-pending { background: #ffc107; color: black; }
         .badge-approved { background: #198754; color: white; }
-        .notice-text { color: #d63384; font-size: 0.9rem; } /* 안내문구 색상 및 크기 설정 */
+        .badge-standby { background: #0dcaf0; color: black; }
+        .badge-rejected { background: #dc3545; color: white; }
+        .badge-cancelled { background: #6c757d; color: white; }
+        .notice-text { color: #d63384; font-size: 0.9rem; }
     </style>
 </head>
 <body>
     <div class="container shadow-sm">
-        <h2 class="text-center mb-2">🗓️ 무룡고등학교 시설 예약 현황</h2>
-        
+        <button class="btn btn-outline-danger btn-sm position-absolute top-0 end-0 m-3" onclick="openCancelModal()">내 예약 취소하기</button>
+
+        <h2 class="text-center mb-2">무룡고등학교 시설 예약 현황</h2>
         <p class="text-center notice-text fw-bold mb-4">
-           승인된 예약만 시설 이용이 가능하며 승인 후 입력하신 연락처로 이용 안내 메세지가 전송됩니다
+            승인된 예약만 시설 이용이 가능하며 승인 후 입력하신 연락처로 이용 안내 메세지가 전송됩니다
         </p>
 
         <table class="table">
@@ -33,14 +37,37 @@
         </table>
         <div class="text-center mt-4"><a href="index.html" class="btn btn-outline-primary fw-bold">예약하러 가기</a></div>
     </div>
+
+    <div class="modal fade" id="cancelModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold text-danger">🗑️ 내 예약 취소하기</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p class="small text-muted">예약 시 입력했던 정보를 정확히 입력해 주세요.</p>
+            <input type="text" id="c_name" class="form-control mb-2" placeholder="이름">
+            <input type="number" id="c_sid" class="form-control mb-2" placeholder="학번 4자리">
+            <input type="password" id="c_pw" class="form-control mb-2" placeholder="예약 비밀번호">
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+            <button type="button" class="btn btn-danger" onclick="processCancel()">취소 실행</button>
+          </div>
+        </div>
+      </div>
+    </div>
     
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const SUPABASE_URL = 'https://uuimbwgcboqcavrouxtv.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_GR9xwY16SVWEbfc648iOUA_U9za_DaN';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // 시간 포맷 함수 (예: 10/12 14:00)
+        let cancelModal;
+
         function formatTime(dateStr) {
             const d = new Date(dateStr);
             return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
@@ -51,16 +78,64 @@
             const list = document.getElementById('public-list');
             list.innerHTML = '';
             data.forEach(res => {
+                let badgeClass = '', badgeText = '';
+                if(res.status === 'pending') { badgeClass = 'badge-pending'; badgeText = '대기 중'; }
+                else if(res.status === 'approved') { badgeClass = 'badge-approved'; badgeText = '승인 완료'; }
+                else if(res.status === 'standby') { badgeClass = 'badge-standby'; badgeText = '취소 대기'; }
+                else if(res.status === 'rejected') { badgeClass = 'badge-rejected'; badgeText = '이용 불가'; }
+                else if(res.status === 'cancelled') { badgeClass = 'badge-cancelled'; badgeText = '예약 취소됨'; }
+
                 const timeString = `${formatTime(res.start_time)} ~ ${formatTime(res.end_time)}`;
                 const row = `<tr>
                     <td>${res.student_name.charAt(0)}*${res.student_name.charAt(res.student_name.length-1)}(${res.student_id.substring(0,2)}**)</td>
                     <td>${res.room_name}</td>
                     <td class="fw-bold">${timeString}</td>
-                    <td><span class="badge ${res.status === 'pending' ? 'badge-pending' : 'badge-approved'}">${res.status === 'pending' ? '대기 중' : '승인 완료'}</span></td>
+                    <td><span class="badge ${badgeClass}">${badgeText}</span></td>
                 </tr>`;
                 list.innerHTML += row;
             });
         }
+
+        // 취소 창 열기
+        function openCancelModal() {
+            cancelModal = new bootstrap.Modal(document.getElementById('cancelModal'));
+            cancelModal.show();
+        }
+
+        // 취소 로직 처리
+        async function processCancel() {
+            const name = document.getElementById('c_name').value;
+            const sid = document.getElementById('c_sid').value;
+            const pw = document.getElementById('c_pw').value;
+
+            if(!name || !sid || !pw) { alert("모든 정보를 입력해 주세요."); return; }
+
+            // DB에서 해당 유저의 '취소되지 않은/거절되지 않은' 예약 찾기
+            const { data } = await _supabase.from('reservations')
+                .select('*')
+                .eq('student_name', name)
+                .eq('student_id', sid)
+                .eq('password', pw)
+                .in('status', ['pending', 'approved', 'standby']);
+
+            if (!data || data.length === 0) {
+                alert("일치하는 예약 정보가 없거나, 이미 취소/거절된 예약입니다.");
+                return;
+            }
+
+            // 가장 최근 예약 1개 취소 처리 (다중 예약일 경우를 대비해 id로 타겟팅)
+            const targetId = data[0].id;
+            const { error } = await _supabase.from('reservations').update({ status: 'cancelled' }).eq('id', targetId);
+
+            if (!error) {
+                alert("성공적으로 예약이 취소되었습니다.");
+                cancelModal.hide();
+                loadStatus(); // 목록 새로고침
+            } else {
+                alert("오류 발생: " + error.message);
+            }
+        }
+
         loadStatus();
     </script>
 </body>
