@@ -2,66 +2,167 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>무룡고등학교 시설 관리자 페이지</title>
+    <title>무룡고 시설 관리자 페이지</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { padding: 40px; background-color: #f8f9fa; }
-        .admin-box { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        body { padding: 40px; background-color: #f8f9fa; font-family: 'Pretendard', sans-serif; }
+        .admin-box { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); position: relative; }
+        .btn-sm { margin-right: 3px; }
+        .pw-masked { font-family: monospace; letter-spacing: 2px; color: #6c757d; }
+        .pw-revealed { font-family: monospace; letter-spacing: 1px; color: #dc3545; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="admin-box container shadow-sm">
-        <h2 class="text-center mb-4">📢 무룡고등학교 시설 관리 모드</h2>
-        <table class="table table-hover">
+        <button class="btn btn-dark btn-sm position-absolute top-0 end-0 m-3" onclick="openSuperAdmin()">⚙️ 운영 책임자 접근</button>
+
+        <h2 class="text-center mb-4 mt-2">무룡고등학교 시설 관리 모드</h2>
+        <table class="table table-hover align-middle">
             <thead class="table-dark">
                 <tr>
                     <th>이름(학번)</th>
                     <th>전화번호</th>
                     <th>시설명</th>
-                    <th>이용 목적</th>
-                    <th>이용 시간 (시작 ~ 종료)</th>
-                    <th>상태</th>
-                    <th>관리</th>
+                    <th>목적</th>
+                    <th>이용 시간</th>
+                    <th>비밀번호 확인</th> <th>상태</th>
+                    <th>관리 (승인/거절)</th>
                 </tr>
             </thead>
             <tbody id="reserve-list"></tbody>
         </table>
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const SUPABASE_URL = 'https://uuimbwgcboqcavrouxtv.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_GR9xwY16SVWEbfc648iOUA_U9za_DaN';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // 시간 포맷 함수 (예: 10/12 14:00)
+        let currentAdminPassword = ''; // DB에서 불러올 관리자 비밀번호
+
+        // 1. 페이지가 열릴 때 DB에서 현재 관리자 비밀번호를 불러옵니다.
+        async function loadSettings() {
+            const { data, error } = await _supabase.from('site_settings').select('admin_password').eq('id', 1).single();
+            if (data) {
+                currentAdminPassword = data.admin_password;
+            } else {
+                alert("설정 정보를 불러오는데 실패했습니다.");
+            }
+        }
+
         function formatTime(dateStr) {
             const d = new Date(dateStr);
             return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
         }
 
+        function getStatusText(status) {
+            if(status === 'pending') return '대기 중';
+            if(status === 'approved') return '승인됨';
+            if(status === 'standby') return '취소 대기';
+            if(status === 'rejected') return '거절됨';
+            if(status === 'cancelled') return '본인 취소';
+            return status;
+        }
+
         async function load() {
-            const { data } = await _supabase.from('reservations').select('*').order('created_at', { ascending: false });
+            const { data } = await _supabase.from('reservations').select('*').order('start_time', { ascending: false });
             const list = document.getElementById('reserve-list');
             list.innerHTML = '';
+            
             data.forEach(res => {
                 const timeString = `${formatTime(res.start_time)} ~ ${formatTime(res.end_time)}`;
+                
+                let actionButtons = '-';
+                if (res.status === 'pending' || res.status === 'standby') {
+                    actionButtons = `
+                        <button onclick="updateStatus('${res.id}', 'approved')" class="btn btn-sm btn-success">승인</button>
+                        <button onclick="updateStatus('${res.id}', 'rejected')" class="btn btn-sm btn-danger">거절</button>
+                    `;
+                }
+
+                // 비밀번호는 기본적으로 **** 로 숨기고 보기 버튼 추가
+                const pwCell = `
+                    <span id="pw-text-${res.id}" class="pw-masked">****</span>
+                    <button id="pw-btn-${res.id}" class="btn btn-sm btn-outline-secondary ms-2" onclick="viewUserPw('${res.id}', '${res.password}')">보기</button>
+                `;
+
                 const row = `<tr>
                     <td>${res.student_name}(${res.student_id})</td>
                     <td>${res.phone}</td>
                     <td>${res.room_name}</td>
                     <td>${res.purpose || '-'}</td>
                     <td class="fw-bold">${timeString}</td>
-                    <td>${res.status === 'pending' ? '⏳대기' : '✅승인'}</td>
-                    <td>${res.status === 'pending' ? `<button onclick="approve('${res.id}')" class="btn btn-sm btn-success">승인</button>` : '완료'}</td>
+                    <td>${pwCell}</td>
+                    <td>${getStatusText(res.status)}</td>
+                    <td>${actionButtons}</td>
                 </tr>`;
                 list.innerHTML += row;
             });
         }
-        async function approve(id) {
-            const { error } = await _supabase.from('reservations').update({ status: 'approved' }).eq('id', id);
-            if (!error) { alert('승인되었습니다!'); load(); }
+
+        // ✨ 공통: 관리자 비밀번호 확인 창
+        function verifyAdminAction() {
+            const input = prompt("이 작업을 수행하려면 '관리자 비밀번호'를 입력하세요.");
+            if (input === null) return false; // 취소 누름
+            if (input === currentAdminPassword) return true; // 통과
+            
+            alert("관리자 비밀번호가 틀렸습니다.");
+            return false;
         }
-        load();
+
+        // ✨ 비밀번호 보기 기능
+        function viewUserPw(id, realPw) {
+            if (verifyAdminAction()) {
+                const textSpan = document.getElementById(`pw-text-${id}`);
+                textSpan.innerText = realPw || '(없음)';
+                textSpan.className = 'pw-revealed';
+                document.getElementById(`pw-btn-${id}`).style.display = 'none'; // 보기 버튼 숨김
+            }
+        }
+
+        // ✨ 승인/거절 기능 (비밀번호 확인 추가)
+        async function updateStatus(id, newStatus) {
+            const actionName = newStatus === 'approved' ? '승인' : '거절';
+            
+            if (!verifyAdminAction()) return; // 비밀번호 확인 통과 못하면 종료
+            if (!confirm(`정말 ${actionName}하시겠습니까?`)) return;
+
+            const { error } = await _supabase.from('reservations').update({ status: newStatus }).eq('id', id);
+            if (!error) { 
+                alert(`✅ ${actionName} 처리되었습니다.`); 
+                load(); 
+            } else { 
+                alert('오류 발생: ' + error.message); 
+            }
+        }
+
+        // ✨ 운영 책임자 설정 기능
+        async function openSuperAdmin() {
+            const code = prompt("운영 책임자 보안코드를 입력하세요.");
+            if (code === null) return; // 취소 누름
+            
+            if (code !== 'mrhsfmo!') {
+                alert("보안코드가 일치하지 않습니다. 접근권한이 없습니다.");
+                return;
+            }
+
+            const newPw = prompt(`[운영 책임자 인증 성공]\n\n현재 관리자 비밀번호: ${currentAdminPassword}\n새롭게 변경할 관리자 비밀번호를 입력하세요.`);
+            if (newPw) {
+                const { error } = await _supabase.from('site_settings').update({ admin_password: newPw }).eq('id', 1);
+                if (!error) {
+                    currentAdminPassword = newPw; // 메모리상의 비밀번호도 즉시 업데이트
+                    alert(`관리자 비밀번호가 '${newPw}'(으)로 변경되었습니다.\n앞으로 승인/거절 시 이 비밀번호를 사용하세요.`);
+                } else {
+                    alert("오류 발생: " + error.message);
+                }
+            }
+        }
+
+        // 초기 실행: 설정값을 먼저 불러온 뒤 리스트를 그립니다.
+        loadSettings().then(() => {
+            load();
+        });
     </script>
 </body>
 </html>
