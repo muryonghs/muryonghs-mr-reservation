@@ -53,8 +53,8 @@
         </div>
 
         <div class="mb-3">
-            <label class="form-label">이용 일자 (다음 주만 선택 가능)</label>
-            <input type="date" id="use_date" class="form-control">
+            <label class="form-label">이용 일자 (다음 주 월~금)</label>
+            <select id="use_date" class="form-select"></select>
         </div>
 
         <div class="row">
@@ -121,24 +121,37 @@
 
         let termsModal;
 
-        function setDateConstraints() {
+        // ✨ 다음 주 월~금 날짜 5개만 계산해서 드롭다운(목록)으로 만들어주는 함수 ✨
+        function populateDateSelect() {
+            const dateSelect = document.getElementById('use_date');
+            dateSelect.innerHTML = ''; // 초기화
+
             const now = new Date();
             const dayOfWeek = now.getDay();
             const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+            
             const thisMonday = new Date(now);
             thisMonday.setDate(now.getDate() + diffToMonday);
+            
             const nextMonday = new Date(thisMonday);
             nextMonday.setDate(thisMonday.getDate() + 7);
-            const nextFriday = new Date(nextMonday);
-            nextFriday.setDate(nextMonday.getDate() + 4);
 
-            const toDateString = (date) => {
-                const offset = date.getTimezoneOffset() * 60000;
-                return (new Date(date - offset)).toISOString().split('T')[0];
-            };
+            const daysKo = ['일', '월', '화', '수', '목', '금', '토'];
 
-            document.getElementById('use_date').setAttribute('min', toDateString(nextMonday));
-            document.getElementById('use_date').setAttribute('max', toDateString(nextFriday));
+            // 월(0)부터 금(4)까지 5일치만 옵션으로 추가
+            for (let i = 0; i < 5; i++) {
+                const targetDate = new Date(nextMonday);
+                targetDate.setDate(nextMonday.getDate() + i);
+                
+                // 실제 저장되는 값 (예: 2024-10-21)
+                const offset = targetDate.getTimezoneOffset() * 60000;
+                const valueStr = (new Date(targetDate - offset)).toISOString().split('T')[0];
+                
+                // 화면에 보이는 글씨 (예: 10/21 (월))
+                const displayStr = `${targetDate.getMonth() + 1}/${targetDate.getDate()} (${daysKo[targetDate.getDay()]})`;
+                
+                dateSelect.add(new Option(displayStr, valueStr));
+            }
         }
 
         function populateTimeSelects() {
@@ -155,7 +168,7 @@
             }
         }
 
-        setDateConstraints();
+        populateDateSelect();
         populateTimeSelects();
 
         function openTermsModal() {
@@ -168,13 +181,11 @@
             const startTime = document.getElementById('start_time').value;
             const endTime = document.getElementById('end_time').value;
             
-            // 1. 빈칸 검사
             if (!name || sid.length !== 4 || !phone || !purpose || !password || !useDate) {
                 alert("비밀번호를 포함한 모든 정보를 올바르게 입력해 주세요.");
                 return;
             }
 
-            // 2. 전화번호 11자리 정확도 검사
             if (phone.length !== 11) {
                 alert("휴대전화 번호 11자리를 정확히 입력해 주세요. (예: 01012345678)");
                 return;
@@ -187,11 +198,10 @@
 
             const diffHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
             if (diffHours > 2) {
-                alert("🚫 1회 최대 이용 가능 시간은 2시간입니다.");
+                alert("1회 최대 이용 가능 시간은 2시간입니다.");
                 return;
             }
 
-            // 체크박스 초기화 및 모달 띄우기
             document.getElementById('agreeCheck').checked = false;
             termsModal = new bootstrap.Modal(document.getElementById('termsModal'));
             termsModal.show();
@@ -215,7 +225,6 @@
             const start = new Date(`${useDate}T${startTime}`);
             const end = new Date(`${useDate}T${endTime}`);
 
-            // 중복 예약 검사
             const { data: existing } = await _supabase
                 .from('reservations')
                 .select('*')
