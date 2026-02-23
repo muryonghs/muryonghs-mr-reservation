@@ -11,12 +11,17 @@
         .header-title { color: #2c3e50; font-weight: bold; text-align: center; margin-bottom: 25px; }
         .form-label { font-weight: bold; margin-top: 10px; }
         .btn-primary { background-color: #004a99; border: none; padding: 12px; font-weight: bold; border-radius: 10px; }
+        .notice-box { background-color: #fff3cd; color: #856404; padding: 10px; border-radius: 8px; text-align: center; font-size: 0.9rem; font-weight: bold; margin-bottom: 20px; }
     </style>
 </head>
 <body>
     <div class="reservation-card">
-        <h2 class="header-title">🏫 무룡고등학교 시설 예약</h2>
-        <p class="text-center text-muted small">평일 07:00 ~ 18:00 이용 가능</p>
+        <h2 class="header-title">무룡고등학교 시설 예약</h2>
+        
+        <div class="notice-box">
+            🔔 안내: 다음 주(월~금) 일정만 예약 가능합니다.<br>
+            (이용 가능 시간: 07:00 ~ 18:00 / <strong>최대 2시간</strong>)
+        </div>
         
         <div class="mb-3">
             <label class="form-label">이용자 이름</label>
@@ -29,8 +34,8 @@
         </div>
 
         <div class="mb-3">
-            <label class="form-label">전화번호</label>
-            <input type="tel" id="phone" class="form-control" placeholder="010-0000-0000">
+            <label class="form-label">전화번호 (- 제외 11자리)</label>
+            <input type="tel" id="phone" class="form-control" placeholder="01012345678" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
         </div>
 
         <div class="mb-3">
@@ -47,41 +52,55 @@
             </select>
         </div>
 
+        <div class="mb-3">
+            <label class="form-label">이용 일자 (다음 주만 선택 가능)</label>
+            <input type="date" id="use_date" class="form-control">
+        </div>
+
         <div class="row">
             <div class="col-6 mb-3">
                 <label class="form-label">시작 시간</label>
-                <input type="datetime-local" id="start" class="form-control">
+                <select id="start_time" class="form-select"></select>
             </div>
             <div class="col-6 mb-3">
                 <label class="form-label">종료 시간</label>
-                <input type="datetime-local" id="end" class="form-control">
+                <select id="end_time" class="form-select"></select>
             </div>
         </div>
 
-        <button onclick="openTermsModal()" class="btn btn-primary w-100 mt-3">예약 신청하기</button>
+        <div class="mb-4 p-3 border rounded bg-light">
+            <label class="form-label text-danger">🔒 예약 취소용 비밀번호 (필수)</label>
+            <input type="password" id="password" class="form-control" placeholder="추후 예약 취소 시 사용할 비밀번호 입력">
+        </div>
+
+        <button onclick="openTermsModal()" class="btn btn-primary w-100">예약 신청하기</button>
         <div class="text-center mt-3">
-            <a href="status.html" class="text-secondary small" style="text-decoration: none;">📅 실시간 예약 현황 확인</a>
+            <a href="status.html" class="text-secondary small" style="text-decoration: none;">📅 실시간 예약 현황 및 취소</a>
         </div>
     </div>
 
     <div class="modal fade" id="termsModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title fw-bold">📝 시설 이용 약관 동의</h5>
+            <h5 class="modal-title fw-bold">시설 이용 약관 동의</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <ul class="text-muted small">
-                <li>무룡고등학교 시설은 모든 학생이 함께 사용하는 공간이므로 깨끗하게 사용해야 합니다.</li>
-                <li>기물 파손 시 배상의 책임이 있을 수 있습니다.</li>
-                <li>사전에 입력한 이용 목적과 다르게 사용할 경우, 즉시 퇴실 조치 및 이후 예약이 제한될 수 있습니다.</li>
-                <li>뒷정리 및 소등을 철저히 해주시기 바랍니다.</li>
+            <ul class="text-muted small" style="padding-left: 20px;">
+                <li class="mb-2">무룡고등학교 시설은 모든 학생이 함께 사용하는 공간이므로 깨끗하게 사용해야 합니다.</li>
+                <li class="mb-2">사전에 입력한 이용 목적과 다르게 사용할 경우, 즉시 퇴실 조치 및 이후 예약이 제한될 수 있습니다.</li>
+                <li class="mb-2">예약은 재학생만 가능하며, 사용 시간과 학교 규정을 준수해야 합니다.</li>
+                <li class="mb-2">시설 사용 후 정리정돈, 쓰레기 처리, 냉·난방 및 전등 소등 등 원상복구를 완료해야 합니다.</li>
+                <li class="mb-2">기자재 및 시설을 훼손하거나 분실한 경우 배상 책임이 있습니다.</li>
+                <li class="mb-2">무단 미사용, 허위 예약, 규정 위반 시 일정 기간 예약이 제한될 수 있습니다.</li>
+                <li class="mb-2">이용 중 발생한 안전사고는 학교 지침에 따라 처리됩니다.</li>
+                <li class="mb-2">원활한 운영을 위해 이름, 학번, 연락처 등의 개인정보를 수집·이용할 수 있습니다.</li>
             </ul>
-            <div class="form-check mt-3">
+            <div class="form-check mt-3 border-top pt-3">
               <input class="form-check-input" type="checkbox" id="agreeCheck">
-              <label class="form-check-label fw-bold" for="agreeCheck">
-                위 시설 이용 약관에 동의합니다. (필수)
+              <label class="form-check-label fw-bold text-primary" for="agreeCheck">
+                위 시설 이용 약관을 모두 확인하였으며, 이에 동의합니다. (필수)
               </label>
             </div>
           </div>
@@ -102,74 +121,135 @@
 
         let termsModal;
 
-        // 1. 정보 입력 확인 후 모달 열기
+        function setDateConstraints() {
+            const now = new Date();
+            const dayOfWeek = now.getDay();
+            const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+            const thisMonday = new Date(now);
+            thisMonday.setDate(now.getDate() + diffToMonday);
+            const nextMonday = new Date(thisMonday);
+            nextMonday.setDate(thisMonday.getDate() + 7);
+            const nextFriday = new Date(nextMonday);
+            nextFriday.setDate(nextMonday.getDate() + 4);
+
+            const toDateString = (date) => {
+                const offset = date.getTimezoneOffset() * 60000;
+                return (new Date(date - offset)).toISOString().split('T')[0];
+            };
+
+            document.getElementById('use_date').setAttribute('min', toDateString(nextMonday));
+            document.getElementById('use_date').setAttribute('max', toDateString(nextFriday));
+        }
+
+        function populateTimeSelects() {
+            const startSelect = document.getElementById('start_time');
+            const endSelect = document.getElementById('end_time');
+            for (let i = 7; i <= 18; i++) {
+                let hour = i.toString().padStart(2, '0');
+                startSelect.add(new Option(`${hour}:00`, `${hour}:00`));
+                endSelect.add(new Option(`${hour}:00`, `${hour}:00`));
+                if (i !== 18) {
+                    startSelect.add(new Option(`${hour}:30`, `${hour}:30`));
+                    endSelect.add(new Option(`${hour}:30`, `${hour}:30`));
+                }
+            }
+        }
+
+        setDateConstraints();
+        populateTimeSelects();
+
         function openTermsModal() {
             const name = document.getElementById('name').value;
             const sid = document.getElementById('sid').value;
             const phone = document.getElementById('phone').value;
             const purpose = document.getElementById('purpose').value;
-            const start = document.getElementById('start').value;
-            const end = document.getElementById('end').value;
-
-            if (!name || sid.length !== 4 || !phone || !purpose || !start || !end) {
-                alert("모든 정보(학번 4자리 포함)를 올바르게 입력해 주세요.");
+            const password = document.getElementById('password').value;
+            const useDate = document.getElementById('use_date').value;
+            const startTime = document.getElementById('start_time').value;
+            const endTime = document.getElementById('end_time').value;
+            
+            // 1. 빈칸 검사
+            if (!name || sid.length !== 4 || !phone || !purpose || !password || !useDate) {
+                alert("비밀번호를 포함한 모든 정보를 올바르게 입력해 주세요.");
                 return;
             }
-            // 정보가 다 입력되었으면 약관 창 띄우기
+
+            // 2. 전화번호 11자리 정확도 검사
+            if (phone.length !== 11) {
+                alert("휴대전화 번호 11자리를 정확히 입력해 주세요. (예: 01012345678)");
+                return;
+            }
+
+            const start = new Date(`${useDate}T${startTime}`);
+            const end = new Date(`${useDate}T${endTime}`);
+
+            if (start >= end) { alert("종료 시간은 시작 시간보다 늦어야 합니다."); return; }
+
+            const diffHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+            if (diffHours > 2) {
+                alert("🚫 1회 최대 이용 가능 시간은 2시간입니다.");
+                return;
+            }
+
+            // 체크박스 초기화 및 모달 띄우기
+            document.getElementById('agreeCheck').checked = false;
             termsModal = new bootstrap.Modal(document.getElementById('termsModal'));
             termsModal.show();
         }
 
-        // 2. 최종 신청 처리
         async function submitReservation() {
             const agree = document.getElementById('agreeCheck').checked;
-            if (!agree) {
-                alert("약관에 동의하셔야 최종 신청이 가능합니다.");
-                return;
-            }
+            if (!agree) { alert("약관에 동의하셔야 최종 신청이 가능합니다."); return; }
 
             const name = document.getElementById('name').value;
             const sid = document.getElementById('sid').value;
             const phone = document.getElementById('phone').value;
             const purpose = document.getElementById('purpose').value;
-            const start = new Date(document.getElementById('start').value);
-            const end = new Date(document.getElementById('end').value);
+            const password = document.getElementById('password').value;
             const room = document.getElementById('room').value;
+            
+            const useDate = document.getElementById('use_date').value;
+            const startTime = document.getElementById('start_time').value;
+            const endTime = document.getElementById('end_time').value;
+            
+            const start = new Date(`${useDate}T${startTime}`);
+            const end = new Date(`${useDate}T${endTime}`);
 
-            // 시간 제한 로직
-            const startHour = start.getHours();
-            const endHour = end.getHours();
-            const day = start.getDay(); 
-
-            if (day === 0 || day === 6) { alert("평일에만 예약이 가능합니다."); return; }
-            if (startHour < 7 || endHour > 18 || (endHour === 18 && end.getMinutes() > 0)) {
-                alert("이용 가능 시간은 07:00 ~ 18:00입니다."); return;
-            }
-            if (start >= end) { alert("종료 시간은 시작 시간보다 늦어야 합니다."); return; }
-
-            // 중복 예약 체크
+            // 중복 예약 검사
             const { data: existing } = await _supabase
                 .from('reservations')
                 .select('*')
                 .eq('room_name', room)
-                .eq('status', 'approved')
+                .in('status', ['approved', 'pending']) 
                 .filter('start_time', 'lt', end.toISOString())
                 .filter('end_time', 'gt', start.toISOString());
 
-            if (existing && existing.length > 0) { alert("이미 해당 시간에 승인된 예약이 있습니다."); return; }
+            let finalStatus = 'pending';
 
-            // DB 저장 (purpose 추가)
+            if (existing && existing.length > 0) { 
+                const wantStandby = confirm("이미 예약이 마감되었습니다. 대기 예약하시겠습니까?\n(기존 예약 취소 시 관리자 승인 후 이용 가능)");
+                if (!wantStandby) {
+                    termsModal.hide();
+                    return; 
+                }
+                finalStatus = 'standby'; 
+            }
+
             const { error } = await _supabase.from('reservations').insert([{
-                student_name: name, student_id: sid, phone: phone, purpose: purpose,
-                room_name: room, start_time: start.toISOString(), end_time: end.toISOString()
+                student_name: name, student_id: sid, phone: phone, purpose: purpose, password: password,
+                room_name: room, start_time: start.toISOString(), end_time: end.toISOString(),
+                status: finalStatus 
             }]);
 
             if (error) {
                 alert("에러: " + error.message);
             } else {
-                termsModal.hide(); // 팝업 닫기
-                // 완료 멘트 변경
-                alert("✅ 예약 신청되었습니다! 최종 승인이 되어야 이용이 가능합니다."); 
+                termsModal.hide();
+                if(finalStatus === 'standby') {
+                    alert("🔄 대기 예약이 완료되었습니다. 현황 페이지에서 상태를 확인해 주세요.");
+                } else {
+                    alert("✅ 예약 신청 완료! 최종 승인이 되어야 이용이 가능합니다."); 
+                }
                 location.reload();
             }
         }
