@@ -5,43 +5,57 @@
     <title>무룡고 시설 예약 현황</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { padding: 40px; background-color: #f1f3f5; }
-        .container { background: white; padding: 25px; border-radius: 15px; }
+        body { padding: 40px; background-color: #f1f3f5; font-family: 'Pretendard', sans-serif; }
+        .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .badge-pending { background: #ffc107; color: black; }
         .badge-approved { background: #198754; color: white; }
+        .notice-text { color: #d63384; font-size: 0.9rem; } /* 안내문구 색상 및 크기 설정 */
     </style>
 </head>
 <body>
     <div class="container shadow-sm">
-        <h2 class="text-center mb-4">🗓️ 무룡고 시설 예약 현황</h2>
+        <h2 class="text-center mb-2">🗓️ 무룡고등학교 시설 예약 현황</h2>
+        
+        <p class="text-center notice-text fw-bold mb-4">
+           승인된 예약만 시설 이용이 가능하며 승인 후 입력하신 연락처로 이용 안내 메세지가 전송됩니다
+        </p>
+
         <table class="table">
-            <thead>
+            <thead class="table-light">
                 <tr>
                     <th>이름(학번)</th>
                     <th>장소</th>
-                    <th>이용 시간</th>
+                    <th>이용 시간 (시작 ~ 종료)</th>
                     <th>상태</th>
                 </tr>
             </thead>
             <tbody id="public-list"></tbody>
         </table>
-        <div class="text-center mt-3"><a href="index.html" class="btn btn-primary">예약하기</a></div>
+        <div class="text-center mt-4"><a href="index.html" class="btn btn-outline-primary fw-bold">예약하러 가기</a></div>
     </div>
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const SUPABASE_URL = 'https://uuimbwgcboqcavrouxtv.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_GR9xwY16SVWEbfc648iOUA_U9za_DaN';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // 시간 포맷 함수 (예: 10/12 14:00)
+        function formatTime(dateStr) {
+            const d = new Date(dateStr);
+            return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        }
+
         async function loadStatus() {
             const { data } = await _supabase.from('reservations').select('*').order('start_time', { ascending: false });
             const list = document.getElementById('public-list');
             list.innerHTML = '';
             data.forEach(res => {
+                const timeString = `${formatTime(res.start_time)} ~ ${formatTime(res.end_time)}`;
                 const row = `<tr>
                     <td>${res.student_name.charAt(0)}*${res.student_name.charAt(res.student_name.length-1)}(${res.student_id.substring(0,2)}**)</td>
                     <td>${res.room_name}</td>
-                    <td>${new Date(res.start_time).toLocaleString('ko-KR')}</td>
+                    <td class="fw-bold">${timeString}</td>
                     <td><span class="badge ${res.status === 'pending' ? 'badge-pending' : 'badge-approved'}">${res.status === 'pending' ? '대기 중' : '승인 완료'}</span></td>
                 </tr>`;
                 list.innerHTML += row;
