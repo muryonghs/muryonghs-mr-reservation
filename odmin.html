@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>무룡고등학교 시설 관리자 페이지</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding: 40px; background-color: #f8f9fa; }
+        .admin-box { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <div class="admin-box container shadow-sm">
+        <h2 class="text-center mb-4">📢 무룡고등학교 시설 관리 모드</h2>
+        <table class="table table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>이름(학번)</th>
+                    <th>전화번호</th>
+                    <th>시설명</th>
+                    <th>이용 목적</th>
+                    <th>이용 시간 (시작 ~ 종료)</th>
+                    <th>상태</th>
+                    <th>관리</th>
+                </tr>
+            </thead>
+            <tbody id="reserve-list"></tbody>
+        </table>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://uuimbwgcboqcavrouxtv.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_GR9xwY16SVWEbfc648iOUA_U9za_DaN';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // 시간 포맷 함수 (예: 10/12 14:00)
+        function formatTime(dateStr) {
+            const d = new Date(dateStr);
+            return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        }
+
+        async function load() {
+            const { data } = await _supabase.from('reservations').select('*').order('created_at', { ascending: false });
+            const list = document.getElementById('reserve-list');
+            list.innerHTML = '';
+            data.forEach(res => {
+                const timeString = `${formatTime(res.start_time)} ~ ${formatTime(res.end_time)}`;
+                const row = `<tr>
+                    <td>${res.student_name}(${res.student_id})</td>
+                    <td>${res.phone}</td>
+                    <td>${res.room_name}</td>
+                    <td>${res.purpose || '-'}</td>
+                    <td class="fw-bold">${timeString}</td>
+                    <td>${res.status === 'pending' ? '⏳대기' : '✅승인'}</td>
+                    <td>${res.status === 'pending' ? `<button onclick="approve('${res.id}')" class="btn btn-sm btn-success">승인</button>` : '완료'}</td>
+                </tr>`;
+                list.innerHTML += row;
+            });
+        }
+        async function approve(id) {
+            const { error } = await _supabase.from('reservations').update({ status: 'approved' }).eq('id', id);
+            if (!error) { alert('승인되었습니다!'); load(); }
+        }
+        load();
+    </script>
+</body>
+</html>
