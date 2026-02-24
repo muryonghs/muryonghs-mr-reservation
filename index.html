@@ -12,14 +12,88 @@
         .form-label { font-weight: bold; margin-top: 10px; }
         .btn-primary { background-color: #004a99; border: none; padding: 12px; font-weight: bold; border-radius: 10px; }
         .notice-box { background-color: #fff3cd; color: #856404; padding: 10px; border-radius: 8px; text-align: center; font-size: 0.9rem; font-weight: bold; margin-bottom: 20px; }
+        
+        .terms-box {
+            max-height: 350px; 
+            overflow-y: auto; 
+            background: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 8px; 
+            border: 1px solid #dee2e6;
+        }
     </style>
+    <script>
+        // ✨ 오픈 시간 제어 및 실시간 카운트다운 타이머 로직 ✨
+        function checkWeekend() {
+            const now = new Date();
+            const day = now.getDay(); // 0: 일요일, 6: 토요일
+            const hour = now.getHours();
+
+            if (day === 6 || (day === 0 && hour < 18)) {
+                document.addEventListener("DOMContentLoaded", function() {
+                    document.body.innerHTML = `
+                        <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:90vh; text-align:center;">
+                            <div style="background:white; padding:40px; border-radius:20px; box-shadow:0 8px 20px rgba(0,0,0,0.1); max-width:400px; width:100%;">
+                                <h1 style="font-size:3rem; margin-bottom:10px;">⏳</h1>
+                                <h3 style="color:#2c3e50; font-weight:bold; margin-bottom:15px;">예약 오픈 대기 중</h3>
+                                <p style="color:#6c757d; font-size:0.95rem; line-height:1.5;">
+                                    주말에는 시스템 점검 및 예약 대기로 인해 신청이 제한됩니다.<br><br>
+                                    오픈까지 남은 시간
+                                </p>
+                                <div id="countdown" style="font-size: 2.8rem; font-weight: bold; color: #d63384; font-variant-numeric: tabular-nums; letter-spacing: 2px; margin-bottom: 20px;">
+                                    00:00:00
+                                </div>
+                                <p style="color:#6c757d; font-size:0.95rem;">
+                                    매주 일요일 오후 6시에 예약이 오픈됩니다!
+                                </p>
+                                <a href="status.html" class="btn btn-primary mt-3 w-100" style="padding:12px; border-radius:10px;">현재 예약 현황 보기</a>
+                            </div>
+                        </div>
+                    `;
+
+                    function updateCountdown() {
+                        const currentTime = new Date();
+                        const targetTime = new Date();
+                        
+                        // 다가오는 일요일 계산 (토요일이면 +1일, 일요일이면 +0일)
+                        const daysUntilSunday = (7 - currentTime.getDay()) % 7;
+                        targetTime.setDate(currentTime.getDate() + daysUntilSunday);
+                        targetTime.setHours(18, 0, 0, 0); // 일요일 18시 정각
+
+                        const diff = targetTime - currentTime;
+
+                        if (diff <= 0) {
+                            location.reload();
+                            return;
+                        }
+
+                        // [수정된 부분] 24시간이 넘어도 잘라내지 않고 '전체 누적 시간'으로 표기
+                        const hours = Math.floor(diff / (1000 * 60 * 60));
+                        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                        const h = String(hours).padStart(2, '0');
+                        const m = String(minutes).padStart(2, '0');
+                        const s = String(seconds).padStart(2, '0');
+
+                        const countdownEl = document.getElementById("countdown");
+                        if(countdownEl) countdownEl.innerText = `${h}:${m}:${s}`;
+                    }
+
+                    updateCountdown(); 
+                    setInterval(updateCountdown, 1000);
+                });
+            }
+        }
+        checkWeekend();
+    </script>
 </head>
 <body>
     <div class="reservation-card">
-        <h2 class="header-title">무룡고등학교 시설 예약</h2>
+        <h2 class="header-title">🏫 무룡고등학교 시설 예약</h2>
         
         <div class="notice-box">
-            🔔 안내: 다음 주(월~금) 일정만 예약 가능합니다.<br>
+            🔔 안내: 이번 주(월~금) 일정만 예약 가능합니다.<br>
             (이용 가능 시간: 07:00 ~ 18:00 / <strong>최대 2시간</strong>)
         </div>
         
@@ -53,7 +127,7 @@
         </div>
 
         <div class="mb-3">
-            <label class="form-label">이용 일자 (다음 주 월~금)</label>
+            <label class="form-label">이용 일자 (해당 주간 월~금)</label>
             <select id="use_date" class="form-select"></select>
         </div>
 
@@ -83,21 +157,49 @@
       <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title fw-bold">시설 이용 약관 동의</h5>
+            <h5 class="modal-title fw-bold">무룡고등학교 시설 이용 약관</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <ul class="text-muted small" style="padding-left: 20px;">
-                <li class="mb-2">무룡고등학교 시설은 모든 학생이 함께 사용하는 공간이므로 깨끗하게 사용해야 합니다.</li>
-                <li class="mb-2">사전에 입력한 이용 목적과 다르게 사용할 경우, 즉시 퇴실 조치 및 이후 예약이 제한될 수 있습니다.</li>
-                <li class="mb-2">예약은 재학생만 가능하며, 사용 시간과 학교 규정을 준수해야 합니다.</li>
-                <li class="mb-2">시설 사용 후 정리정돈, 쓰레기 처리, 냉·난방 및 전등 소등 등 원상복구를 완료해야 합니다.</li>
-                <li class="mb-2">기자재 및 시설을 훼손하거나 분실한 경우 배상 책임이 있습니다.</li>
-                <li class="mb-2">무단 미사용, 허위 예약, 규정 위반 시 일정 기간 예약이 제한될 수 있습니다.</li>
-                <li class="mb-2">이용 중 발생한 안전사고는 학교 지침에 따라 처리됩니다.</li>
-                <li class="mb-2">원활한 운영을 위해 이름, 학번, 연락처 등의 개인정보를 수집·이용할 수 있습니다.</li>
-            </ul>
-            <div class="form-check mt-3 border-top pt-3">
+            <div class="terms-box text-muted small">
+                <ol style="padding-left: 15px; margin-bottom: 0; line-height: 1.6;">
+                    <li class="mb-3">
+                        <strong class="text-dark">이용 대상</strong><br>
+                        - 예약 및 시설 이용은 재학생에 한해 가능합니다.<br>
+                        - 신청한 사용 시간과 학교 규정을 반드시 준수해야 합니다.
+                    </li>
+                    <li class="mb-3">
+                        <strong class="text-dark">이용 목적 준수</strong><br>
+                        - 사전에 입력한 이용 목적과 다르게 사용할 경우, 즉시 퇴실 조치 및 이후 예약이 제한될 수 있습니다.
+                    </li>
+                    <li class="mb-3">
+                        <strong class="text-dark">사용 후 정리 의무</strong><br>
+                        - 시설 사용 후에는 정리정돈, 쓰레기 처리, 냉·난방기 및 전등 소등, 기자재 정리 및 키 반납 등 <strong>반드시 원상복구를 완료</strong>해야 합니다.
+                    </li>
+                    <li class="mb-3">
+                        <strong class="text-dark">시설 및 기자재 관리</strong><br>
+                        - 시설이나 기자재를 훼손 또는 분실한 경우, 배상 책임이 있습니다.
+                    </li>
+                    <li class="mb-3">
+                        <strong class="text-dark">예약 관련 유의사항</strong><br>
+                        - 무단 미사용, 허위 예약, 규정 위반 시 일정 기간 예약이 제한될 수 있습니다.
+                    </li>
+                    <li class="mb-3">
+                        <strong class="text-dark">안전 및 책임</strong><br>
+                        - 이용 중 안전사고에 유의해야 하며, 약관 위반 또는 부주의로 인한 사고의 책임은 본인에게 있습니다.
+                    </li>
+                    <li class="mb-3">
+                        <strong class="text-dark">개인정보 수집 및 이용</strong><br>
+                        - 원활한 운영을 위해 이름, 학번, 연락처 등의 개인정보를 수집·이용할 수 있습니다.
+                    </li>
+                    <li>
+                        <strong class="text-dark">CCTV 운영 안내</strong><br>
+                        - 시설 안전 및 관리를 위해 CCTV가 상시 녹화 중입니다.
+                    </li>
+                </ol>
+            </div>
+            
+            <div class="form-check mt-3 pt-2">
               <input class="form-check-input" type="checkbox" id="agreeCheck">
               <label class="form-check-label fw-bold text-primary" for="agreeCheck">
                 위 시설 이용 약관을 모두 확인하였으며, 이에 동의합니다. (필수)
@@ -121,33 +223,31 @@
 
         let termsModal;
 
-        // ✨ 다음 주 월~금 날짜 5개만 계산해서 드롭다운(목록)으로 만들어주는 함수 ✨
         function populateDateSelect() {
             const dateSelect = document.getElementById('use_date');
-            dateSelect.innerHTML = ''; // 초기화
+            if(!dateSelect) return; 
+            dateSelect.innerHTML = ''; 
 
             const now = new Date();
             const dayOfWeek = now.getDay();
-            const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-            
-            const thisMonday = new Date(now);
-            thisMonday.setDate(now.getDate() + diffToMonday);
-            
-            const nextMonday = new Date(thisMonday);
-            nextMonday.setDate(thisMonday.getDate() + 7);
+            const targetMonday = new Date(now);
+
+            if (dayOfWeek === 0) {
+                targetMonday.setDate(now.getDate() + 1); 
+            } else if (dayOfWeek === 6) {
+                targetMonday.setDate(now.getDate() + 2); 
+            } else {
+                targetMonday.setDate(now.getDate() - dayOfWeek + 1); 
+            }
 
             const daysKo = ['일', '월', '화', '수', '목', '금', '토'];
 
-            // 월(0)부터 금(4)까지 5일치만 옵션으로 추가
             for (let i = 0; i < 5; i++) {
-                const targetDate = new Date(nextMonday);
-                targetDate.setDate(nextMonday.getDate() + i);
+                const targetDate = new Date(targetMonday);
+                targetDate.setDate(targetMonday.getDate() + i);
                 
-                // 실제 저장되는 값 (예: 2024-10-21)
                 const offset = targetDate.getTimezoneOffset() * 60000;
                 const valueStr = (new Date(targetDate - offset)).toISOString().split('T')[0];
-                
-                // 화면에 보이는 글씨 (예: 10/21 (월))
                 const displayStr = `${targetDate.getMonth() + 1}/${targetDate.getDate()} (${daysKo[targetDate.getDay()]})`;
                 
                 dateSelect.add(new Option(displayStr, valueStr));
@@ -157,6 +257,8 @@
         function populateTimeSelects() {
             const startSelect = document.getElementById('start_time');
             const endSelect = document.getElementById('end_time');
+            if(!startSelect) return;
+
             for (let i = 7; i <= 18; i++) {
                 let hour = i.toString().padStart(2, '0');
                 startSelect.add(new Option(`${hour}:00`, `${hour}:00`));
@@ -198,7 +300,7 @@
 
             const diffHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
             if (diffHours > 2) {
-                alert("1회 최대 이용 가능 시간은 2시간입니다.");
+                alert("🚫 1회 최대 이용 가능 시간은 2시간입니다.");
                 return;
             }
 
