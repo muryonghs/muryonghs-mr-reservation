@@ -13,19 +13,34 @@
         .badge-standby { background: #0dcaf0; color: black; }
         .badge-rejected { background: #dc3545; color: white; }
         .badge-cancelled { background: #6c757d; color: white; }
-        .notice-text { color: #d63384; font-size: 0.9rem; }
         
-        /* 모바일 최적화를 위해 표 안의 글씨 크기와 여백을 살짝 줄였습니다 */
+        /* ✨ 새롭게 추가된 깔끔한 안내 박스 스타일 ✨ */
+        .info-box {
+            background-color: #f8f9fa; /* 부드러운 회색 배경 */
+            border: 1px solid #e9ecef;
+            border-left: 4px solid #004a99; /* 왼쪽 포인트 컬러 */
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #495057;
+            margin-bottom: 20px;
+        }
+        .info-box strong { color: #004a99; font-weight: bold; } /* 강조 단어 색상 */
+
         .table th, .table td { padding: 8px 4px; vertical-align: middle; text-align: center; font-size: 0.9rem; }
         .table th { font-size: 0.85rem; white-space: nowrap; }
     </style>
 </head>
 <body>
     <div class="container shadow-sm">
-        <h2 class="text-center mt-2 mb-2">🗓️ 무룡고등학교 시설 예약 현황</h2>
-        <p class="text-center notice-text fw-bold mb-4">
-            승인된 예약만 시설 이용이 가능하며 승인 후 입력하신 연락처로 이용 안내 메세지가 전송됩니다
-        </p>
+        <h2 class="text-center mt-2 mb-3">🗓️ 무룡고등학교 시설 예약 현황</h2>
+        
+        <div class="info-box">
+            💡 <strong>승인된 예약</strong>만 시설 이용이 가능하며,<br>
+            승인 시 입력하신 연락처로 <strong>이용 안내 메시지</strong>가 전송됩니다.
+        </div>
 
         <div class="table-responsive" style="overflow-x: hidden;">
             <table class="table table-sm">
@@ -33,7 +48,7 @@
                     <tr>
                         <th>이름</th>
                         <th>장소</th>
-                        <th>시간</th>
+                        <th>타임</th>
                         <th>상태</th>
                     </tr>
                 </thead>
@@ -76,7 +91,6 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let cancelModal;
 
-        // ✨ 시간을 모바일에 맞게 초압축 포맷으로 변경 (예: 10/24(줄바꿈)14:00~16:00) ✨
         function formatCompactTime(startStr, endStr) {
             const d1 = new Date(startStr);
             const d2 = new Date(endStr);
@@ -99,8 +113,6 @@
                 else if(res.status === 'cancelled') { badgeClass = 'badge-cancelled'; badgeText = '예약 취소됨'; }
 
                 const compactTime = formatCompactTime(res.start_time, res.end_time);
-                
-                // 장소 이름도 길면 압축되도록 처리 (예: 소회의실)
                 const roomName = res.room_name.replace(' ', '<br>'); 
 
                 const row = `<tr>
