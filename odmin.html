@@ -17,7 +17,7 @@
 <body>
     <div class="admin-box container shadow-sm">
         <div class="header-actions">
-            <button class="btn btn-dark btn-sm" onclick="openSuperAdmin()">⚙️ 운영 책임자 설정</button>
+            <button class="btn btn-dark btn-sm" onclick="openSuperAdmin()">⚙️ 운영 책임자 접근</button>
         </div>
 
         <h2 class="text-center mb-4 mt-2">📢 무룡고등학교 시설 관리 모드</h2>
@@ -108,7 +108,7 @@
             const input = prompt("이 작업을 수행하려면 '관리자 비밀번호'를 입력하세요.");
             if (input === null) return false; 
             if (input === currentAdminPassword) return true; 
-            alert("❌ 관리자 비밀번호가 틀렸습니다.");
+            alert("관리자 비밀번호가 틀렸습니다.");
             return false;
         }
 
@@ -134,7 +134,7 @@
         async function openSuperAdmin() {
             const code = prompt("운영 책임자 보안코드를 입력하세요.");
             if (code === null) return; 
-            if (code !== 'mrhsfmo!') { alert("🚫 보안코드가 일치하지 않습니다."); return; }
+            if (code !== 'mrhsfmo!') { alert("보안코드가 일치하지 않습니다. 접근 권한이 없습니다."); return; }
 
             const action = prompt(`[운영 책임자 인증 성공]\n원하시는 작업을 숫자로 입력하세요.\n\n1. 취소/관리자 비밀번호 변경\n2. 예약 명단 전체 초기화 (삭제)`);
             
