@@ -23,29 +23,30 @@
         }
     </style>
     <script>
-        // ✨ 오픈 시간 제어 및 실시간 카운트다운 타이머 로직 ✨
-        function checkWeekend() {
+        // ✨ 수정된 운영 사이클: 일요일 오후 6시 ~ 월요일 오후 6시는 확정 시간(차단) ✨
+        function checkBookingWindow() {
             const now = new Date();
-            const day = now.getDay(); // 0: 일요일, 6: 토요일
+            const day = now.getDay(); // 0: 일요일, 1: 월요일
             const hour = now.getHours();
 
-            if (day === 6 || (day === 0 && hour < 18)) {
+            // 차단 조건: 일요일 18시(오후 6시) 이후 ~ 자정  OR  월요일 자정 ~ 18시(오후 6시) 이전
+            const isSundayEvening = (day === 0 && hour >= 18);
+            const isMondayBeforeEvening = (day === 1 && hour < 18);
+
+            if (isSundayEvening || isMondayBeforeEvening) {
                 document.addEventListener("DOMContentLoaded", function() {
                     document.body.innerHTML = `
                         <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:90vh; text-align:center;">
                             <div style="background:white; padding:40px; border-radius:20px; box-shadow:0 8px 20px rgba(0,0,0,0.1); max-width:400px; width:100%;">
-                                <h1 style="font-size:3rem; margin-bottom:10px;">⏳</h1>
-                                <h3 style="color:#2c3e50; font-weight:bold; margin-bottom:15px;">예약 오픈 대기 중</h3>
+                                <h1 style="font-size:3rem; margin-bottom:10px;">⛔️</h1>
+                                <h3 style="color:#2c3e50; font-weight:bold; margin-bottom:15px;">예약 확정 및 점검 시간</h3>
                                 <p style="color:#6c757d; font-size:0.95rem; line-height:1.5;">
-                                    주말에는 시스템 점검 및 예약 대기로 인해 신청이 제한됩니다.<br><br>
+                                    현재는 접수된 예약 명단을 확정하는 시간입니다.<br>다음 주 예약은 <strong>월요일 오후 6시</strong>에 시작됩니다.<br><br>
                                     오픈까지 남은 시간
                                 </p>
                                 <div id="countdown" style="font-size: 2.8rem; font-weight: bold; color: #d63384; font-variant-numeric: tabular-nums; letter-spacing: 2px; margin-bottom: 20px;">
                                     00:00:00
                                 </div>
-                                <p style="color:#6c757d; font-size:0.95rem;">
-                                    매주 일요일 오후 6시에 예약이 오픈됩니다!
-                                </p>
                                 <a href="status.html" class="btn btn-primary mt-3 w-100" style="padding:12px; border-radius:10px;">현재 예약 현황 보기</a>
                             </div>
                         </div>
@@ -55,19 +56,20 @@
                         const currentTime = new Date();
                         const targetTime = new Date();
                         
-                        // 다가오는 일요일 계산 (토요일이면 +1일, 일요일이면 +0일)
-                        const daysUntilSunday = (7 - currentTime.getDay()) % 7;
-                        targetTime.setDate(currentTime.getDate() + daysUntilSunday);
-                        targetTime.setHours(18, 0, 0, 0); // 일요일 18시 정각
+                        // 목표 시간을 월요일 오후 6시(18시)로 설정
+                        if (currentTime.getDay() === 0) { // 일요일 밤에 접속했다면 내일(월)로 세팅
+                            targetTime.setDate(currentTime.getDate() + 1);
+                        }
+                        targetTime.setHours(18, 0, 0, 0); // 월요일 18시 정각 (오후 6시)
 
                         const diff = targetTime - currentTime;
 
+                        // 시간이 다 되면 즉시 페이지 새로고침
                         if (diff <= 0) {
                             location.reload();
                             return;
                         }
 
-                        // [수정된 부분] 24시간이 넘어도 잘라내지 않고 '전체 누적 시간'으로 표기
                         const hours = Math.floor(diff / (1000 * 60 * 60));
                         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                         const seconds = Math.floor((diff % (1000 * 60)) / 1000);
@@ -85,7 +87,7 @@
                 });
             }
         }
-        checkWeekend();
+        checkBookingWindow();
     </script>
 </head>
 <body>
@@ -93,7 +95,7 @@
         <h2 class="header-title">🏫 무룡고등학교 시설 예약</h2>
         
         <div class="notice-box">
-            🔔 안내: 이번 주(월~금) 일정만 예약 가능합니다.<br>
+            🔔 안내: 현재 [다음 주 월~금] 일정 예약 진행 중<br>
             (이용 가능 시간: 07:00 ~ 18:00 / <strong>최대 2시간</strong>)
         </div>
         
@@ -127,7 +129,7 @@
         </div>
 
         <div class="mb-3">
-            <label class="form-label">이용 일자 (해당 주간 월~금)</label>
+            <label class="form-label">이용 일자 (다음 주 월~금)</label>
             <select id="use_date" class="form-select"></select>
         </div>
 
@@ -198,7 +200,6 @@
                     </li>
                 </ol>
             </div>
-            
             <div class="form-check mt-3 pt-2">
               <input class="form-check-input" type="checkbox" id="agreeCheck">
               <label class="form-check-label fw-bold text-primary" for="agreeCheck">
@@ -223,6 +224,7 @@
 
         let termsModal;
 
+        // ✨ 예약 가능 날짜를 무조건 '다가오는 월요일~금요일'로 강제 고정 ✨
         function populateDateSelect() {
             const dateSelect = document.getElementById('use_date');
             if(!dateSelect) return; 
@@ -230,15 +232,17 @@
 
             const now = new Date();
             const dayOfWeek = now.getDay();
-            const targetMonday = new Date(now);
-
+            
+            // 다가오는 월요일 계산
+            let daysToNextMonday;
             if (dayOfWeek === 0) {
-                targetMonday.setDate(now.getDate() + 1); 
-            } else if (dayOfWeek === 6) {
-                targetMonday.setDate(now.getDate() + 2); 
+                daysToNextMonday = 1; // 오늘이 일요일이면 내일이 월요일
             } else {
-                targetMonday.setDate(now.getDate() - dayOfWeek + 1); 
+                daysToNextMonday = 8 - dayOfWeek; // 평일이면 다음 주 월요일
             }
+
+            const targetMonday = new Date(now);
+            targetMonday.setDate(now.getDate() + daysToNextMonday);
 
             const daysKo = ['일', '월', '화', '수', '목', '금', '토'];
 
