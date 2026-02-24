@@ -6,7 +6,6 @@
     <title>무룡고 시설 예약 현황</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        /* 모바일을 고려해 padding 축소 */
         body { padding: 15px; background-color: #f1f3f5; font-family: 'Pretendard', sans-serif; }
         .container { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .badge-pending { background: #ffc107; color: black; }
@@ -15,22 +14,26 @@
         .badge-rejected { background: #dc3545; color: white; }
         .badge-cancelled { background: #6c757d; color: white; }
         .notice-text { color: #d63384; font-size: 0.9rem; }
+        
+        /* 모바일 최적화를 위해 표 안의 글씨 크기와 여백을 살짝 줄였습니다 */
+        .table th, .table td { padding: 8px 4px; vertical-align: middle; text-align: center; font-size: 0.9rem; }
+        .table th { font-size: 0.85rem; white-space: nowrap; }
     </style>
 </head>
 <body>
     <div class="container shadow-sm">
-        <h2 class="text-center mt-2 mb-2">무룡고등학교 시설 예약 현황</h2>
+        <h2 class="text-center mt-2 mb-2">🗓️ 무룡고등학교 시설 예약 현황</h2>
         <p class="text-center notice-text fw-bold mb-4">
             승인된 예약만 시설 이용이 가능하며 승인 후 입력하신 연락처로 이용 안내 메세지가 전송됩니다
         </p>
 
-        <div class="table-responsive">
-            <table class="table" style="min-width: 450px;">
+        <div class="table-responsive" style="overflow-x: hidden;">
+            <table class="table table-sm">
                 <thead class="table-light">
                     <tr>
-                        <th>이름(학번)</th>
+                        <th>이름</th>
                         <th>장소</th>
-                        <th>이용 시간</th>
+                        <th>시간</th>
                         <th>상태</th>
                     </tr>
                 </thead>
@@ -73,9 +76,14 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let cancelModal;
 
-        function formatTime(dateStr) {
-            const d = new Date(dateStr);
-            return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        // ✨ 시간을 모바일에 맞게 초압축 포맷으로 변경 (예: 10/24(줄바꿈)14:00~16:00) ✨
+        function formatCompactTime(startStr, endStr) {
+            const d1 = new Date(startStr);
+            const d2 = new Date(endStr);
+            const datePart = `${d1.getMonth()+1}/${d1.getDate()}`;
+            const time1 = `${String(d1.getHours()).padStart(2,'0')}:${String(d1.getMinutes()).padStart(2,'0')}`;
+            const time2 = `${String(d2.getHours()).padStart(2,'0')}:${String(d2.getMinutes()).padStart(2,'0')}`;
+            return `<strong style="font-size:0.95rem;">${datePart}</strong><br><span class="text-secondary" style="font-size:0.8rem;">${time1}~${time2}</span>`;
         }
 
         async function loadStatus() {
@@ -90,11 +98,15 @@
                 else if(res.status === 'rejected') { badgeClass = 'badge-rejected'; badgeText = '이용 불가'; }
                 else if(res.status === 'cancelled') { badgeClass = 'badge-cancelled'; badgeText = '예약 취소됨'; }
 
-                const timeString = `${formatTime(res.start_time)} ~ ${formatTime(res.end_time)}`;
+                const compactTime = formatCompactTime(res.start_time, res.end_time);
+                
+                // 장소 이름도 길면 압축되도록 처리 (예: 소회의실)
+                const roomName = res.room_name.replace(' ', '<br>'); 
+
                 const row = `<tr>
-                    <td>${res.student_name.charAt(0)}*${res.student_name.charAt(res.student_name.length-1)}<br>(${res.student_id.substring(0,2)}**)</td>
-                    <td>${res.room_name}</td>
-                    <td class="fw-bold" style="font-size:0.9rem;">${timeString}</td>
+                    <td>${res.student_name.charAt(0)}*${res.student_name.charAt(res.student_name.length-1)}<br><span class="text-muted" style="font-size:0.75rem;">(${res.student_id.substring(0,2)}**)</span></td>
+                    <td class="fw-bold">${roomName}</td>
+                    <td>${compactTime}</td>
                     <td><span class="badge ${badgeClass}">${badgeText}</span></td>
                 </tr>`;
                 list.innerHTML += row;
