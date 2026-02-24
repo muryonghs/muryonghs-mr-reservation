@@ -2,36 +2,43 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>무룡고등학교 시설 관리자 페이지</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>무룡고 시설 관리자 페이지</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { padding: 40px; background-color: #f8f9fa; font-family: 'Pretendard', sans-serif; }
-        .admin-box { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); position: relative; }
+        body { padding: 15px; background-color: #f8f9fa; font-family: 'Pretendard', sans-serif; }
+        .admin-box { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
         .btn-sm { margin-right: 3px; }
         .pw-masked { font-family: monospace; letter-spacing: 2px; color: #6c757d; }
         .pw-revealed { font-family: monospace; letter-spacing: 1px; color: #dc3545; font-weight: bold; }
+        .header-actions { display: flex; justify-content: flex-end; margin-bottom: 15px; }
     </style>
 </head>
 <body>
     <div class="admin-box container shadow-sm">
-        <button class="btn btn-dark btn-sm position-absolute top-0 end-0 m-3" onclick="openSuperAdmin()">⚙️ 운영 책임자 접근</button>
+        <div class="header-actions">
+            <button class="btn btn-dark btn-sm" onclick="openSuperAdmin()">⚙️ 운영 책임자 설정</button>
+        </div>
 
         <h2 class="text-center mb-4 mt-2">📢 무룡고등학교 시설 관리 모드</h2>
-        <table class="table table-hover align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>이름(학번)</th>
-                    <th>전화번호</th>
-                    <th>시설명</th>
-                    <th>목적</th>
-                    <th>이용 시간</th>
-                    <th>비밀번호 확인</th>
-                    <th>상태</th>
-                    <th>관리 (승인/거절)</th>
-                </tr>
-            </thead>
-            <tbody id="reserve-list"></tbody>
-        </table>
+        
+        <div class="table-responsive">
+            <table class="table table-hover align-middle" style="min-width: 800px;">
+                <thead class="table-dark">
+                    <tr>
+                        <th>이름(학번)</th>
+                        <th>전화번호</th>
+                        <th>시설명</th>
+                        <th>목적</th>
+                        <th>이용 시간</th>
+                        <th>비밀번호 확인</th>
+                        <th>상태</th>
+                        <th>관리 (승인/거절)</th>
+                    </tr>
+                </thead>
+                <tbody id="reserve-list"></tbody>
+            </table>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -54,11 +61,11 @@
         }
 
         function getStatusText(status) {
-            if(status === 'pending') return '대기 중';
-            if(status === 'approved') return '승인됨';
-            if(status === 'standby') return '취소 대기';
-            if(status === 'rejected') return '거절됨';
-            if(status === 'cancelled') return '본인 취소';
+            if(status === 'pending') return '⏳대기 중';
+            if(status === 'approved') return '✅승인됨';
+            if(status === 'standby') return '🔄취소 대기';
+            if(status === 'rejected') return '❌거절됨';
+            if(status === 'cancelled') return '🗑️본인 취소';
             return status;
         }
 
@@ -73,8 +80,8 @@
                 let actionButtons = '-';
                 if (res.status === 'pending' || res.status === 'standby') {
                     actionButtons = `
-                        <button onclick="updateStatus('${res.id}', 'approved')" class="btn btn-sm btn-success">승인</button>
-                        <button onclick="updateStatus('${res.id}', 'rejected')" class="btn btn-sm btn-danger">거절</button>
+                        <button onclick="updateStatus('${res.id}', 'approved')" class="btn btn-sm btn-success mb-1">승인</button>
+                        <button onclick="updateStatus('${res.id}', 'rejected')" class="btn btn-sm btn-danger mb-1">거절</button>
                     `;
                 }
 
@@ -84,11 +91,11 @@
                 `;
 
                 const row = `<tr>
-                    <td>${res.student_name}(${res.student_id})</td>
+                    <td>${res.student_name}<br>(${res.student_id})</td>
                     <td>${res.phone}</td>
                     <td>${res.room_name}</td>
                     <td>${res.purpose || '-'}</td>
-                    <td class="fw-bold">${timeString}</td>
+                    <td class="fw-bold" style="font-size:0.9rem;">${timeString}</td>
                     <td>${pwCell}</td>
                     <td>${getStatusText(res.status)}</td>
                     <td>${actionButtons}</td>
@@ -101,8 +108,7 @@
             const input = prompt("이 작업을 수행하려면 '관리자 비밀번호'를 입력하세요.");
             if (input === null) return false; 
             if (input === currentAdminPassword) return true; 
-            
-            alert("관리자 비밀번호가 틀렸습니다.");
+            alert("❌ 관리자 비밀번호가 틀렸습니다.");
             return false;
         }
 
@@ -125,11 +131,10 @@
             else { alert('오류 발생: ' + error.message); }
         }
 
-        // ✨ 운영 책임자 메뉴 (비밀번호 변경 & 명단 초기화) ✨
         async function openSuperAdmin() {
             const code = prompt("운영 책임자 보안코드를 입력하세요.");
             if (code === null) return; 
-            if (code !== 'mrhsfmo!') { alert("보안코드가 일치하지 않습니다. 접근권한이 없습니다."); return; }
+            if (code !== 'mrhsfmo!') { alert("🚫 보안코드가 일치하지 않습니다."); return; }
 
             const action = prompt(`[운영 책임자 인증 성공]\n원하시는 작업을 숫자로 입력하세요.\n\n1. 취소/관리자 비밀번호 변경\n2. 예약 명단 전체 초기화 (삭제)`);
             
@@ -147,20 +152,13 @@
                 if (confirmReset) {
                     const finalCheck = prompt("초기화를 진행하려면 창에 '초기화진행' 이라고 정확히 입력해주세요.");
                     if (finalCheck === '초기화진행') {
-                        // DB의 모든 예약 데이터 삭제 (id가 0이 아닌 모든 데이터 = 전부 삭제)
                         const { error } = await _supabase.from('reservations').delete().neq('id', 0);
                         if (!error) {
                             alert("✅ 예약 명단이 완벽하게 초기화되었습니다.");
                             load();
-                        } else {
-                            alert("오류 발생: " + error.message);
-                        }
-                    } else {
-                        alert("입력한 단어가 일치하지 않아 초기화가 취소되었습니다.");
-                    }
+                        } else { alert("오류 발생: " + error.message); }
+                    } else { alert("입력이 일치하지 않아 취소되었습니다."); }
                 }
-            } else if (action !== null) {
-                alert("올바른 번호를 입력해주세요.");
             }
         }
 
