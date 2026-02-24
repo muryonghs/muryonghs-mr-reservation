@@ -15,13 +15,19 @@
         .badge-rejected { background: #dc3545; color: white; }
         .badge-cancelled { background: #6c757d; color: white; }
         .notice-text { color: #d63384; font-size: 0.9rem; }
+        /* 버튼 위치 정렬용 */
+        .header-actions { display: flex; justify-content: flex-end; margin-bottom: 10px; }
     </style>
 </head>
 <body>
     <div class="container shadow-sm">
-        <h2 class="text-center mt-2 mb-2">🗓️ 무룡고등학교 시설 예약 현황</h2>
+        <div class="header-actions">
+            <button class="btn btn-outline-danger btn-sm" onclick="openCancelModal()">내 예약 취소하기</button>
+        </div>
+
+        <h2 class="text-center mb-2">무룡고등학교 시설 예약 현황</h2>
         <p class="text-center notice-text fw-bold mb-4">
-            "승인된 예약만 시설 이용이 가능하며 승인 후 입력하신 연락처로 이용 안내 메세지가 전송됩니다"
+            승인된 예약만 시설 이용이 가능하며 승인 후 입력하신 연락처로 이용 안내 메세지가 전송됩니다
         </p>
 
         <div class="table-responsive">
@@ -38,10 +44,7 @@
             </table>
         </div>
         
-        <div class="d-flex justify-content-center gap-3 mt-4">
-            <button class="btn btn-outline-danger fw-bold" onclick="openCancelModal()">내 예약 취소하기</button>
-            <a href="index.html" class="btn btn-primary fw-bold">예약하러 가기</a>
-        </div>
+        <div class="text-center mt-4"><a href="index.html" class="btn btn-outline-primary fw-bold">예약하러 가기</a></div>
     </div>
 
     <div class="modal fade" id="cancelModal" tabindex="-1">
