@@ -12,13 +12,24 @@
         .form-label { font-weight: bold; margin-top: 10px; }
         .btn-primary { background-color: #004a99; border: none; padding: 12px; font-weight: bold; border-radius: 10px; }
         .notice-box { background-color: #fff3cd; color: #856404; padding: 10px; border-radius: 8px; text-align: center; font-size: 0.9rem; font-weight: bold; margin-bottom: 20px; }
-        .terms-box { max-height: 350px; overflow-y: auto; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; }
+        
+        /* 약관 스크롤 박스 */
+        .terms-box {
+            max-height: 250px; /* 스크롤을 유도하기 위해 높이를 살짝 줄였습니다 */
+            overflow-y: auto; 
+            background: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 8px; 
+            border: 1px solid #dee2e6;
+        }
     </style>
     <script>
+        // ✨ 수정된 운영 사이클: 일요일 오후 6시 ~ 월요일 오후 6시는 확정 시간(차단) ✨
         function checkBookingWindow() {
             const now = new Date();
-            const day = now.getDay(); 
+            const day = now.getDay(); // 0: 일요일, 1: 월요일
             const hour = now.getHours();
+
             const isSundayEvening = (day === 0 && hour >= 18);
             const isMondayBeforeEvening = (day === 1 && hour < 18);
 
@@ -27,7 +38,7 @@
                     document.body.innerHTML = `
                         <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:90vh; text-align:center;">
                             <div style="background:white; padding:40px; border-radius:20px; box-shadow:0 8px 20px rgba(0,0,0,0.1); max-width:400px; width:100%;">
-                                <h1 style="font-size:3rem; margin-bottom:10px;">⛔️</h1>
+                                <h1 style="font-size:3rem; margin-bottom:10px;">🛠️</h1>
                                 <h3 style="color:#2c3e50; font-weight:bold; margin-bottom:15px;">예약 확정 및 점검 시간</h3>
                                 <p style="color:#6c757d; font-size:0.95rem; line-height:1.5;">
                                     현재는 접수된 예약 명단을 확정하는 시간입니다.<br>다음 주 예약은 <strong>월요일 오후 6시</strong>에 시작됩니다.<br><br>
@@ -44,19 +55,31 @@
                     function updateCountdown() {
                         const currentTime = new Date();
                         const targetTime = new Date();
-                        if (currentTime.getDay() === 0) { targetTime.setDate(currentTime.getDate() + 1); }
+                        
+                        if (currentTime.getDay() === 0) { 
+                            targetTime.setDate(currentTime.getDate() + 1);
+                        }
                         targetTime.setHours(18, 0, 0, 0); 
+
                         const diff = targetTime - currentTime;
-                        if (diff <= 0) { location.reload(); return; }
+
+                        if (diff <= 0) {
+                            location.reload();
+                            return;
+                        }
+
                         const hours = Math.floor(diff / (1000 * 60 * 60));
                         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                         const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
                         const h = String(hours).padStart(2, '0');
                         const m = String(minutes).padStart(2, '0');
                         const s = String(seconds).padStart(2, '0');
+
                         const countdownEl = document.getElementById("countdown");
                         if(countdownEl) countdownEl.innerText = `${h}:${m}:${s}`;
                     }
+
                     updateCountdown(); 
                     setInterval(updateCountdown, 1000);
                 });
@@ -68,16 +91,32 @@
 <body>
     <div class="reservation-card">
         <h2 class="header-title">🏫 무룡고등학교 시설 예약</h2>
+        
         <div class="notice-box">
             🔔 안내: 현재 [다음 주 월~금] 일정 예약 진행 중<br>
             (이용 가능 시간: 07:00 ~ 18:00 / <strong>최대 2시간</strong>)
         </div>
         
-        <div class="mb-3"><label class="form-label">이용자 이름</label><input type="text" id="name" class="form-control" placeholder="성함을 입력하세요"></div>
-        <div class="mb-3"><label class="form-label">학번 (4자리)</label><input type="number" id="sid" class="form-control" placeholder="예: 1201" oninput="if(this.value.length > 4) this.value = this.value.slice(0, 4);"></div>
-        <div class="mb-3"><label class="form-label">전화번호 (- 제외 11자리)</label><input type="tel" id="phone" class="form-control" placeholder="01012345678" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '');"></div>
-        <div class="mb-3"><label class="form-label">이용 목적</label><input type="text" id="purpose" class="form-control" placeholder="예: 동아리 회의, 멘토링, 자습 등"></div>
-        
+        <div class="mb-3">
+            <label class="form-label">이용자 이름</label>
+            <input type="text" id="name" class="form-control" placeholder="성함을 입력하세요">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">학번 (4자리)</label>
+            <input type="number" id="sid" class="form-control" placeholder="예: 1201" oninput="if(this.value.length > 4) this.value = this.value.slice(0, 4);">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">전화번호 (- 제외 11자리)</label>
+            <input type="tel" id="phone" class="form-control" placeholder="01012345678" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">이용 목적</label>
+            <input type="text" id="purpose" class="form-control" placeholder="예: 동아리 회의, 멘토링, 자습 등">
+        </div>
+
         <div class="mb-3">
             <label class="form-label">시설 선택</label>
             <select id="room" class="form-select">
@@ -87,11 +126,20 @@
             </select>
         </div>
 
-        <div class="mb-3"><label class="form-label">이용 일자 (다음 주 월~금)</label><select id="use_date" class="form-select"></select></div>
+        <div class="mb-3">
+            <label class="form-label">이용 일자 (다음 주 월~금)</label>
+            <select id="use_date" class="form-select"></select>
+        </div>
 
         <div class="row">
-            <div class="col-6 mb-3"><label class="form-label">시작 시간</label><select id="start_time" class="form-select"></select></div>
-            <div class="col-6 mb-3"><label class="form-label">종료 시간</label><select id="end_time" class="form-select"></select></div>
+            <div class="col-6 mb-3">
+                <label class="form-label">시작 시간</label>
+                <select id="start_time" class="form-select"></select>
+            </div>
+            <div class="col-6 mb-3">
+                <label class="form-label">종료 시간</label>
+                <select id="end_time" class="form-select"></select>
+            </div>
         </div>
 
         <div class="mb-4 p-3 border rounded bg-light">
@@ -100,7 +148,9 @@
         </div>
 
         <button onclick="openTermsModal()" class="btn btn-primary w-100">예약 신청하기</button>
-        <div class="text-center mt-3"><a href="status.html" class="text-secondary small" style="text-decoration: none;">📅 실시간 예약 현황 및 취소</a></div>
+        <div class="text-center mt-3">
+            <a href="status.html" class="text-secondary small" style="text-decoration: none;">📅 실시간 예약 현황 및 취소</a>
+        </div>
     </div>
 
     <div class="modal fade" id="termsModal" tabindex="-1" aria-hidden="true">
@@ -111,7 +161,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <div class="terms-box text-muted small">
+            <div class="terms-box text-muted small mb-3" onscroll="checkTermsScroll(this)">
                 <ol style="padding-left: 15px; margin-bottom: 0; line-height: 1.6;">
                     <li class="mb-3"><strong class="text-dark">이용 대상</strong><br>- 예약 및 시설 이용은 재학생에 한해 가능합니다.<br>- 신청한 사용 시간과 학교 규정을 반드시 준수해야 합니다.</li>
                     <li class="mb-3"><strong class="text-dark">이용 목적 준수</strong><br>- 사전에 입력한 이용 목적과 다르게 사용할 경우, 즉시 퇴실 조치 및 이후 예약이 제한될 수 있습니다.</li>
@@ -123,10 +173,15 @@
                     <li><strong class="text-dark">CCTV 운영 안내</strong><br>- 시설 안전 및 관리를 위해 CCTV가 상시 녹화 중입니다.</li>
                 </ol>
             </div>
-            <div class="form-check mt-3 pt-2">
-              <input class="form-check-input" type="checkbox" id="agreeCheck">
-              <label class="form-check-label fw-bold text-primary" for="agreeCheck">위 시설 이용 약관을 모두 확인하였으며, 이에 동의합니다. (필수)</label>
+            
+            <div class="border-top pt-3">
+                <p id="scrollMsg" class="text-danger small fw-bold mb-2">🚨 약관을 끝까지 스크롤해야 동의를 입력할 수 있습니다.</p>
+                <div class="input-group">
+                    <span class="input-group-text bg-light fw-bold" style="font-size: 0.9rem;">동의 입력</span>
+                    <input type="text" id="agreeText" class="form-control" placeholder="'동의합니다' 라고 적어주세요" disabled>
+                </div>
             </div>
+
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
@@ -142,25 +197,46 @@
         const SUPABASE_URL = 'https://uuimbwgcboqcavrouxtv.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_GR9xwY16SVWEbfc648iOUA_U9za_DaN';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         let termsModal;
+
+        // ✨ 스크롤 감지 로직 ✨
+        function checkTermsScroll(el) {
+            // 스크롤이 끝에 도달했는지 확인 (오차 2px 허용)
+            if (el.scrollTop + el.clientHeight >= el.scrollHeight - 2) {
+                document.getElementById('agreeText').disabled = false; // 입력창 활성화
+                document.getElementById('scrollMsg').style.display = 'none'; // 경고 메시지 숨기기
+            }
+        }
 
         function populateDateSelect() {
             const dateSelect = document.getElementById('use_date');
             if(!dateSelect) return; 
             dateSelect.innerHTML = ''; 
+
             const now = new Date();
             const dayOfWeek = now.getDay();
+            
             let daysToNextMonday;
-            if (dayOfWeek === 0) { daysToNextMonday = 1; } else { daysToNextMonday = 8 - dayOfWeek; }
+            if (dayOfWeek === 0) {
+                daysToNextMonday = 1; 
+            } else {
+                daysToNextMonday = 8 - dayOfWeek; 
+            }
+
             const targetMonday = new Date(now);
             targetMonday.setDate(now.getDate() + daysToNextMonday);
+
             const daysKo = ['일', '월', '화', '수', '목', '금', '토'];
+
             for (let i = 0; i < 5; i++) {
                 const targetDate = new Date(targetMonday);
                 targetDate.setDate(targetMonday.getDate() + i);
+                
                 const offset = targetDate.getTimezoneOffset() * 60000;
                 const valueStr = (new Date(targetDate - offset)).toISOString().split('T')[0];
                 const displayStr = `${targetDate.getMonth() + 1}/${targetDate.getDate()} (${daysKo[targetDate.getDay()]})`;
+                
                 dateSelect.add(new Option(displayStr, valueStr));
             }
         }
@@ -169,6 +245,7 @@
             const startSelect = document.getElementById('start_time');
             const endSelect = document.getElementById('end_time');
             if(!startSelect) return;
+
             for (let i = 7; i <= 18; i++) {
                 let hour = i.toString().padStart(2, '0');
                 startSelect.add(new Option(`${hour}:00`, `${hour}:00`));
@@ -179,6 +256,7 @@
                 }
             }
         }
+
         populateDateSelect();
         populateTimeSelects();
 
@@ -192,22 +270,49 @@
             const startTime = document.getElementById('start_time').value;
             const endTime = document.getElementById('end_time').value;
             
-            if (!name || sid.length !== 4 || !phone || !purpose || !password || !useDate) { alert("비밀번호를 포함한 모든 정보를 올바르게 입력해 주세요."); return; }
-            if (phone.length !== 11) { alert("휴대전화 번호 11자리를 정확히 입력해 주세요."); return; }
+            if (!name || sid.length !== 4 || !phone || !purpose || !password || !useDate) {
+                alert("비밀번호를 포함한 모든 정보를 올바르게 입력해 주세요.");
+                return;
+            }
+
+            if (phone.length !== 11) {
+                alert("휴대전화 번호 11자리를 정확히 입력해 주세요. (예: 01012345678)");
+                return;
+            }
+
             const start = new Date(`${useDate}T${startTime}`);
             const end = new Date(`${useDate}T${endTime}`);
-            if (start >= end) { alert("종료 시간은 시작 시간보다 늦어야 합니다."); return; }
-            const diffHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-            if (diffHours > 2) { alert("🚫 1회 최대 이용 가능 시간은 2시간입니다."); return; }
 
-            document.getElementById('agreeCheck').checked = false;
+            if (start >= end) { alert("종료 시간은 시작 시간보다 늦어야 합니다."); return; }
+
+            const diffHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+            if (diffHours > 2) {
+                alert("1회 최대 이용 가능 시간은 2시간입니다.");
+                return;
+            }
+
+            // ✨ 모달 열 때마다 스크롤 및 입력창 초기화 ✨
+            const termsBox = document.querySelector('.terms-box');
+            termsBox.scrollTop = 0; // 스크롤 맨 위로
+            const agreeInput = document.getElementById('agreeText');
+            agreeInput.value = ''; // 텍스트 초기화
+            agreeInput.disabled = true; // 다시 잠금
+            document.getElementById('scrollMsg').style.display = 'block'; // 경고창 띄우기
+
             termsModal = new bootstrap.Modal(document.getElementById('termsModal'));
             termsModal.show();
+            
+            // 혹시 화면이 커서 스크롤바가 안 생기는 경우를 대비한 자동체크
+            setTimeout(() => { checkTermsScroll(termsBox); }, 200); 
         }
 
         async function submitReservation() {
-            const agree = document.getElementById('agreeCheck').checked;
-            if (!agree) { alert("약관에 동의하셔야 최종 신청이 가능합니다."); return; }
+            // ✨ 정확한 텍스트 입력 검사 ✨
+            const agreeVal = document.getElementById('agreeText').value.trim();
+            if (agreeVal !== "동의합니다") { 
+                alert("약관을 읽고 '동의합니다'를 정확히 입력하셔야 최종 신청이 가능합니다."); 
+                return; 
+            }
 
             const name = document.getElementById('name').value;
             const sid = document.getElementById('sid').value;
@@ -215,6 +320,7 @@
             const purpose = document.getElementById('purpose').value;
             const password = document.getElementById('password').value;
             const room = document.getElementById('room').value;
+            
             const useDate = document.getElementById('use_date').value;
             const startTime = document.getElementById('start_time').value;
             const endTime = document.getElementById('end_time').value;
@@ -222,30 +328,39 @@
             const start = new Date(`${useDate}T${startTime}`);
             const end = new Date(`${useDate}T${endTime}`);
 
-            const { data: existing } = await _supabase.from('reservations').select('*').eq('room_name', room)
-                .in('status', ['approved', 'pending']).filter('start_time', 'lt', end.toISOString()).filter('end_time', 'gt', start.toISOString());
+            const { data: existing } = await _supabase
+                .from('reservations')
+                .select('*')
+                .eq('room_name', room)
+                .in('status', ['approved', 'pending']) 
+                .filter('start_time', 'lt', end.toISOString())
+                .filter('end_time', 'gt', start.toISOString());
 
             let finalStatus = 'pending';
+
             if (existing && existing.length > 0) { 
                 const wantStandby = confirm("이미 예약이 마감되었습니다. 대기 예약하시겠습니까?\n(기존 예약 취소 시 관리자 승인 후 이용 가능)");
-                if (!wantStandby) { termsModal.hide(); return; }
+                if (!wantStandby) {
+                    termsModal.hide();
+                    return; 
+                }
                 finalStatus = 'standby'; 
             }
 
             const { error } = await _supabase.from('reservations').insert([{
                 student_name: name, student_id: sid, phone: phone, purpose: purpose, password: password,
-                room_name: room, start_time: start.toISOString(), end_time: end.toISOString(), status: finalStatus 
+                room_name: room, start_time: start.toISOString(), end_time: end.toISOString(),
+                status: finalStatus 
             }]);
 
             if (error) {
                 alert("에러: " + error.message);
             } else {
                 termsModal.hide();
-                // ✨ 완료 후 status.html로 자동 이동하도록 변경된 부분 ✨
                 if(finalStatus === 'standby') {
-                    alert("🔄 대기 예약이 완료되었습니다. 현황 페이지로 이동합니다.");
+                    alert("대기 예약이 완료되었습니다. 현황 페이지로 이동합니다.");
                 } else {
-                    alert("✅ 예약 신청 완료! 현황 페이지로 이동합니다."); 
+                    alert("예약 신청 완료! 현황 페이지로 이동합니다."); 
                 }
                 window.location.href = 'status.html';
             }
