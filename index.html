@@ -15,7 +15,7 @@
         
         /* 약관 스크롤 박스 */
         .terms-box {
-            max-height: 250px; /* 스크롤을 유도하기 위해 높이를 살짝 줄였습니다 */
+            max-height: 250px; 
             overflow-y: auto; 
             background: #f8f9fa; 
             padding: 15px; 
@@ -24,10 +24,9 @@
         }
     </style>
     <script>
-        // ✨ 수정된 운영 사이클: 일요일 오후 6시 ~ 월요일 오후 6시는 확정 시간(차단) ✨
         function checkBookingWindow() {
             const now = new Date();
-            const day = now.getDay(); // 0: 일요일, 1: 월요일
+            const day = now.getDay(); 
             const hour = now.getHours();
 
             const isSundayEvening = (day === 0 && hour >= 18);
@@ -62,11 +61,7 @@
                         targetTime.setHours(18, 0, 0, 0); 
 
                         const diff = targetTime - currentTime;
-
-                        if (diff <= 0) {
-                            location.reload();
-                            return;
-                        }
+                        if (diff <= 0) { location.reload(); return; }
 
                         const hours = Math.floor(diff / (1000 * 60 * 60));
                         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -94,7 +89,7 @@
         
         <div class="notice-box">
             🔔 안내: 현재 [다음 주 월~금] 일정 예약 진행 중<br>
-            (이용 가능 시간: 07:00 ~ 18:00 / <strong>최대 2시간</strong>)
+            (이용 가능 시간: 07:00 ~ 16:00 / <strong>최대 2시간</strong>)
         </div>
         
         <div class="mb-3">
@@ -124,6 +119,15 @@
                 <option value="풋살장">풋살장</option>
                 <option value="소회의실">소회의실</option>
             </select>
+        </div>
+
+        <div class="mb-4 mt-2 px-2">
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="is_priority" onchange="handlePriorityCheck(this)">
+                <label class="form-check-label fw-bold text-secondary" for="is_priority">
+                    우선권 사용 <span class="fw-normal" style="font-size:0.85rem;">(해당자만 체크)</span>
+                </label>
+            </div>
         </div>
 
         <div class="mb-3">
@@ -200,12 +204,16 @@
 
         let termsModal;
 
-        // ✨ 스크롤 감지 로직 ✨
+        function handlePriorityCheck(cb) {
+            if(cb.checked) {
+                alert("우선권은 아래의 경우에만 선택 가능합니다.\n\n• 동아리 정규 활동 시간 (※ 연습 및 연습경기 제외)\n• 담당 선생님으로부터 우선 사용 안내를 받은 경우\n\n우선권 선택 시 선착순과 관계없이 우선 배정됩니다.\n허위로 체크할 경우 예약 취소 및 향후 시설 이용이 제한될 수 있습니다.");
+            }
+        }
+
         function checkTermsScroll(el) {
-            // 스크롤이 끝에 도달했는지 확인 (오차 2px 허용)
             if (el.scrollTop + el.clientHeight >= el.scrollHeight - 2) {
-                document.getElementById('agreeText').disabled = false; // 입력창 활성화
-                document.getElementById('scrollMsg').style.display = 'none'; // 경고 메시지 숨기기
+                document.getElementById('agreeText').disabled = false;
+                document.getElementById('scrollMsg').style.display = 'none'; 
             }
         }
 
@@ -218,15 +226,11 @@
             const dayOfWeek = now.getDay();
             
             let daysToNextMonday;
-            if (dayOfWeek === 0) {
-                daysToNextMonday = 1; 
-            } else {
-                daysToNextMonday = 8 - dayOfWeek; 
-            }
+            if (dayOfWeek === 0) { daysToNextMonday = 1; } 
+            else { daysToNextMonday = 8 - dayOfWeek; }
 
             const targetMonday = new Date(now);
             targetMonday.setDate(now.getDate() + daysToNextMonday);
-
             const daysKo = ['일', '월', '화', '수', '목', '금', '토'];
 
             for (let i = 0; i < 5; i++) {
@@ -241,16 +245,17 @@
             }
         }
 
+        // ✨ 시간 변경 (07시부터 16시까지만) ✨
         function populateTimeSelects() {
             const startSelect = document.getElementById('start_time');
             const endSelect = document.getElementById('end_time');
             if(!startSelect) return;
 
-            for (let i = 7; i <= 18; i++) {
+            for (let i = 7; i <= 16; i++) {
                 let hour = i.toString().padStart(2, '0');
                 startSelect.add(new Option(`${hour}:00`, `${hour}:00`));
                 endSelect.add(new Option(`${hour}:00`, `${hour}:00`));
-                if (i !== 18) {
+                if (i !== 16) { // 16:30은 옵션에서 제외되도록 처리
                     startSelect.add(new Option(`${hour}:30`, `${hour}:30`));
                     endSelect.add(new Option(`${hour}:30`, `${hour}:30`));
                 }
@@ -291,23 +296,19 @@
                 return;
             }
 
-            // ✨ 모달 열 때마다 스크롤 및 입력창 초기화 ✨
             const termsBox = document.querySelector('.terms-box');
-            termsBox.scrollTop = 0; // 스크롤 맨 위로
+            termsBox.scrollTop = 0; 
             const agreeInput = document.getElementById('agreeText');
-            agreeInput.value = ''; // 텍스트 초기화
-            agreeInput.disabled = true; // 다시 잠금
-            document.getElementById('scrollMsg').style.display = 'block'; // 경고창 띄우기
+            agreeInput.value = ''; 
+            agreeInput.disabled = true; 
+            document.getElementById('scrollMsg').style.display = 'block'; 
 
             termsModal = new bootstrap.Modal(document.getElementById('termsModal'));
             termsModal.show();
-            
-            // 혹시 화면이 커서 스크롤바가 안 생기는 경우를 대비한 자동체크
             setTimeout(() => { checkTermsScroll(termsBox); }, 200); 
         }
 
         async function submitReservation() {
-            // ✨ 정확한 텍스트 입력 검사 ✨
             const agreeVal = document.getElementById('agreeText').value.trim();
             if (agreeVal !== "동의합니다") { 
                 alert("약관을 읽고 '동의합니다'를 정확히 입력하셔야 최종 신청이 가능합니다."); 
@@ -320,6 +321,7 @@
             const purpose = document.getElementById('purpose').value;
             const password = document.getElementById('password').value;
             const room = document.getElementById('room').value;
+            const isPriority = document.getElementById('is_priority').checked;
             
             const useDate = document.getElementById('use_date').value;
             const startTime = document.getElementById('start_time').value;
@@ -350,7 +352,7 @@
             const { error } = await _supabase.from('reservations').insert([{
                 student_name: name, student_id: sid, phone: phone, purpose: purpose, password: password,
                 room_name: room, start_time: start.toISOString(), end_time: end.toISOString(),
-                status: finalStatus 
+                status: finalStatus, is_priority: isPriority
             }]);
 
             if (error) {
