@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>무룡고등학교 시설 관리자 페이지</title>
+    <title>무룡고 시설 관리자 페이지</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { padding: 15px; background-color: #f8f9fa; font-family: 'Pretendard', sans-serif; }
         
-        /* 로그인 섹션 스타일 */
         #login-section { max-width: 450px; margin: 80px auto; background: white; padding: 40px 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
         .security-warning { background-color: #fff3cd; border-left: 5px solid #dc3545; color: #856404; padding: 15px; border-radius: 5px; font-size: 0.85rem; text-align: left; line-height: 1.6; margin-bottom: 25px; }
         
-        /* 관리자 보드 섹션 스타일 (초기엔 숨김) */
         #admin-section { display: none; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin: 20px auto; max-width: 1200px; }
         .btn-sm { margin-right: 3px; }
         .pw-masked { font-family: monospace; letter-spacing: 2px; color: #6c757d; }
@@ -23,17 +21,14 @@
 <body>
 
     <div id="login-section">
-        <h2 class="fw-bold mb-3"> 시설관리자 시스템</h2>
-        
+        <h2 class="fw-bold mb-3">시설 관리자 시스템</h2>
         <div class="security-warning">
             <strong>[보안 경고]</strong><br>
             본 관리자 페이지는 무룡고등학교 전교학생회 임원 및 교직원 전용입니다. 허가되지 않은 접근을 엄격히 금하며, 비밀번호를 절대 타인에게 공유하거나 노출하지 마십시오.
         </div>
-
         <div class="mb-4">
             <input type="password" id="login-pw" class="form-control form-control-lg text-center" placeholder="비밀번호 또는 보안코드 입력">
         </div>
-
         <div class="d-flex gap-2 justify-content-center">
             <button class="btn btn-primary w-50 fw-bold" onclick="attemptLogin('admin')">관리자 로그인</button>
             <button class="btn btn-dark w-50 fw-bold" onclick="attemptLogin('super')">운영 책임자 로그인</button>
@@ -42,11 +37,11 @@
 
     <div id="admin-section">
         <div class="header-actions">
-            <button id="super-admin-btn" class="btn btn-dark btn-sm fw-bold" style="display: none;" onclick="openSuperAdmin()">⚙️ 운영 책임자 설정</button>
+            <button id="super-admin-btn" class="btn btn-dark btn-sm fw-bold" style="display: none;" onclick="openSuperAdmin()">⚙️ 운영 책임자 접근</button>
             <button class="btn btn-outline-secondary btn-sm ms-2 fw-bold" onclick="logout()">로그아웃</button>
         </div>
 
-        <h2 class="text-center mb-4 mt-2">무룡고등학교 시설 관리 보드</h2>
+        <h2 class="text-center mb-4 mt-2">📢 무룡고등학교 시설 관리 보드</h2>
         
         <div class="table-responsive">
             <table class="table table-hover align-middle" style="min-width: 800px;">
@@ -74,60 +69,43 @@
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentAdminPassword = ''; 
-        let currentRole = ''; // 현재 로그인한 권한 ('admin' 또는 'super')
+        let currentRole = ''; 
 
-        // DB에서 현재 관리자 비밀번호 불러오기
         async function loadSettings() {
             const { data, error } = await _supabase.from('site_settings').select('admin_password').eq('id', 1).single();
             if (data) { currentAdminPassword = data.admin_password; } 
-            else { console.error("설정 정보를 불러오는데 실패했습니다."); }
         }
-        loadSettings(); // 페이지 로드 시 백그라운드에서 미리 불러옴
+        loadSettings(); 
 
-        // 🔑 로그인 처리 함수
         function attemptLogin(role) {
             const inputPw = document.getElementById('login-pw').value;
-            
-            if (!inputPw) {
-                alert("비밀번호를 입력해주세요.");
-                return;
-            }
+            if (!inputPw) { alert("비밀번호를 입력해주세요."); return; }
 
             if (role === 'admin') {
-                if (inputPw === currentAdminPassword) {
-                    loginSuccess('admin');
-                } else {
-                    alert("관리자 비밀번호가 일치하지 않습니다.");
-                }
+                if (inputPw === currentAdminPassword) { loginSuccess('admin'); } 
+                else { alert("관리자 비밀번호가 일치하지 않습니다."); }
             } else if (role === 'super') {
-                if (inputPw === 'mrhsfmo!') {
-                    loginSuccess('super');
-                } else {
-                    alert("운영 책임자 보안코드가 일치하지 않습니다.");
-                }
+                if (inputPw === 'mrhsfmo!') { loginSuccess('super'); } 
+                else { alert("운영 책임자 보안코드가 일치하지 않습니다."); }
             }
         }
 
-        // ✅ 로그인 성공 시 화면 전환
         function loginSuccess(role) {
             currentRole = role;
-            document.getElementById('login-pw').value = ''; // 비밀번호 칸 비우기
+            document.getElementById('login-pw').value = ''; 
             
-            // 화면 전환
             document.getElementById('login-section').style.display = 'none';
             document.getElementById('admin-section').style.display = 'block';
 
-            // 권한에 따른 버튼 표시
             if (role === 'super') {
                 document.getElementById('super-admin-btn').style.display = 'inline-block';
             } else {
                 document.getElementById('super-admin-btn').style.display = 'none';
             }
 
-            load(); // 데이터 불러오기
+            load(); 
         }
 
-        // 🚪 로그아웃
         function logout() {
             currentRole = '';
             document.getElementById('admin-section').style.display = 'none';
@@ -140,16 +118,16 @@
         }
 
         function getStatusText(status) {
-            if(status === 'pending') return '⏳ 대기 중';
-            if(status === 'approved') return '✅ 승인됨';
-            if(status === 'standby') return '🔄 취소 대기';
-            if(status === 'rejected') return '❌ 거절됨';
-            if(status === 'cancelled') return '🗑️ 본인 취소';
+            if(status === 'pending') return '대기 중';
+            if(status === 'approved') return '승인됨';
+            if(status === 'standby') return '취소 대기';
+            if(status === 'rejected') return '거절됨';
+            if(status === 'cancelled') return '본인 취소';
             return status;
         }
 
-        // 📊 데이터 로드 함수 (비밀번호 확인 없이 바로 출력)
         async function load() {
+            // 관리자 페이지에서도 내림차순 정렬
             const { data } = await _supabase.from('reservations').select('*').order('start_time', { ascending: false });
             const list = document.getElementById('reserve-list');
             list.innerHTML = '';
@@ -165,16 +143,18 @@
                     `;
                 }
 
-                // 비밀번호 보기 (이제 로그인 했으므로 바로 볼 수 있게 함)
                 const pwCell = `
                     <span id="pw-text-${res.id}" class="pw-masked">****</span>
                     <button id="pw-btn-${res.id}" class="btn btn-sm btn-outline-secondary ms-2" onclick="viewUserPw('${res.id}', '${res.password}')">보기</button>
                 `;
 
+                // ✨ 우선권 뱃지 추가 ✨
+                const priorityBadge = res.is_priority ? `<br><span class="badge bg-danger mt-1">우선권</span>` : '';
+
                 const row = `<tr>
                     <td>${res.student_name}<br>(${res.student_id})</td>
                     <td>${res.phone}</td>
-                    <td class="fw-bold">${res.room_name}</td>
+                    <td class="fw-bold">${res.room_name}${priorityBadge}</td>
                     <td>${res.purpose || '-'}</td>
                     <td class="fw-bold" style="font-size:0.9rem;">${timeString}</td>
                     <td>${pwCell}</td>
@@ -185,7 +165,6 @@
             });
         }
 
-        // 👁️ 학생 취소 비밀번호 보기 (클릭 즉시 표시)
         function viewUserPw(id, realPw) {
             const textSpan = document.getElementById(`pw-text-${id}`);
             textSpan.innerText = realPw || '(없음)';
@@ -193,7 +172,6 @@
             document.getElementById(`pw-btn-${id}`).style.display = 'none'; 
         }
 
-        // ✅ 승인/거절 처리 (비밀번호 묻지 않고 바로 처리)
         async function updateStatus(id, newStatus) {
             const actionName = newStatus === 'approved' ? '승인' : '거절';
             if (!confirm(`정말 ${actionName}하시겠습니까?`)) return;
@@ -207,7 +185,6 @@
             }
         }
 
-        // ⚙️ 운영 책임자 설정 (이미 로그인 했으므로 바로 메뉴 표시)
         async function openSuperAdmin() {
             const action = prompt(`[운영 책임자 전용 메뉴]\n원하시는 작업을 숫자로 입력하세요.\n\n1. 관리자 비밀번호 변경\n2. 예약 명단 전체 초기화 (영구 삭제)`);
             
@@ -227,7 +204,7 @@
                     if (finalCheck === '초기화진행') {
                         const { error } = await _supabase.from('reservations').delete().neq('id', 0);
                         if (!error) {
-                            alert("✅ 예약 명단이 완벽하게 초기화되었습니다.");
+                            alert("예약 명단이 완벽하게 초기화되었습니다.");
                             load();
                         } else { alert("오류 발생: " + error.message); }
                     } else { alert("입력이 일치하지 않아 취소되었습니다."); }
