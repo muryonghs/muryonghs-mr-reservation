@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>무룡고 시설 예약 현황</title>
+    <title>무룡고등학교 시설 예약 현황</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { padding: 15px; background-color: #f1f3f5; font-family: 'Pretendard', sans-serif; }
@@ -14,11 +14,10 @@
         .badge-rejected { background: #dc3545; color: white; }
         .badge-cancelled { background: #6c757d; color: white; }
         
-        /* ✨ 새롭게 추가된 깔끔한 안내 박스 스타일 ✨ */
         .info-box {
-            background-color: #f8f9fa; /* 부드러운 회색 배경 */
+            background-color: #f8f9fa; 
             border: 1px solid #e9ecef;
-            border-left: 4px solid #004a99; /* 왼쪽 포인트 컬러 */
+            border-left: 4px solid #004a99; 
             padding: 15px;
             border-radius: 8px;
             text-align: center;
@@ -27,7 +26,7 @@
             color: #495057;
             margin-bottom: 20px;
         }
-        .info-box strong { color: #004a99; font-weight: bold; } /* 강조 단어 색상 */
+        .info-box strong { color: #004a99; font-weight: bold; } 
 
         .table th, .table td { padding: 8px 4px; vertical-align: middle; text-align: center; font-size: 0.9rem; }
         .table th { font-size: 0.85rem; white-space: nowrap; }
@@ -35,7 +34,7 @@
 </head>
 <body>
     <div class="container shadow-sm">
-        <h2 class="text-center mt-2 mb-3">🗓️ 무룡고등학교 시설 예약 현황</h2>
+        <h2 class="text-center mt-2 mb-3">무룡고등학교 시설 예약 현황</h2>
         
         <div class="info-box">
             💡 <strong>승인된 예약</strong>만 시설 이용이 가능하며,<br>
@@ -48,7 +47,7 @@
                     <tr>
                         <th>이름</th>
                         <th>장소</th>
-                        <th>타임</th>
+                        <th>시간</th>
                         <th>상태</th>
                     </tr>
                 </thead>
@@ -101,9 +100,11 @@
         }
 
         async function loadStatus() {
+            // 우선권이 있는 항목을 먼저 정렬할 수도 있지만, 우선 시간순으로 나열
             const { data } = await _supabase.from('reservations').select('*').order('start_time', { ascending: false });
             const list = document.getElementById('public-list');
             list.innerHTML = '';
+            
             data.forEach(res => {
                 let badgeClass = '', badgeText = '';
                 if(res.status === 'pending') { badgeClass = 'badge-pending'; badgeText = '대기 중'; }
@@ -113,7 +114,10 @@
                 else if(res.status === 'cancelled') { badgeClass = 'badge-cancelled'; badgeText = '예약 취소됨'; }
 
                 const compactTime = formatCompactTime(res.start_time, res.end_time);
-                const roomName = res.room_name.replace(' ', '<br>'); 
+                
+                // ✨ 우선권 뱃지 추가 ✨
+                const priorityBadge = res.is_priority ? `<br><span class="badge bg-danger mt-1">우선권</span>` : '';
+                const roomName = res.room_name.replace(' ', '<br>') + priorityBadge; 
 
                 const row = `<tr>
                     <td>${res.student_name.charAt(0)}*${res.student_name.charAt(res.student_name.length-1)}<br><span class="text-muted" style="font-size:0.75rem;">(${res.student_id.substring(0,2)}**)</span></td>
