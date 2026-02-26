@@ -23,7 +23,6 @@
         }
     </style>
     <script>
-        // 기본 시간대 차단 (일요일 18시 ~ 월요일 18시)
         function checkBookingWindow() {
             const now = new Date();
             const day = now.getDay(); 
@@ -84,7 +83,7 @@
         </div>
         
         <div class="mb-3"><label class="form-label">이용자 이름</label><input type="text" id="name" class="form-control" placeholder="성함을 입력하세요"></div>
-        <div class="mb-3"><label class="form-label">학번 (4자리)</label><input type="number" id="sid" class="form-control" placeholder="예: 1201" oninput="if(this.value.length > 4) this.value = this.value.slice(0, 4);"></div>
+        <div class="mb-3"><label class="form-label">학번 (4자리)</label><input type="number" id="sid" class="form-control" placeholder="예: 3705" oninput="if(this.value.length > 4) this.value = this.value.slice(0, 4);"></div>
         <div class="mb-3"><label class="form-label">전화번호 (- 제외 11자리)</label><input type="tel" id="phone" class="form-control" placeholder="01012345678" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '');"></div>
         <div class="mb-3"><label class="form-label">이용 목적</label><input type="text" id="purpose" class="form-control" placeholder="예: 동아리 회의, 멘토링, 자습 등"></div>
         
@@ -165,7 +164,6 @@
         const SUPABASE_KEY = 'sb_publishable_GR9xwY16SVWEbfc648iOUA_U9za_DaN';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // ✨ 관리자가 강제 차단했는지 DB에서 확인하는 로직 (하단에서 실행됨) ✨
         async function checkAdminBlock() {
             const { data } = await _supabase.from('site_settings').select('is_booking_blocked').eq('id', 1).single();
             if (data && data.is_booking_blocked) {
@@ -175,7 +173,7 @@
                             <h1 style="font-size:3rem; margin-bottom:10px;">🚧</h1>
                             <h3 style="color:#2c3e50; font-weight:bold; margin-bottom:15px;">예약 임시 중단 안내</h3>
                             <p style="color:#6c757d; font-size:0.95rem; line-height:1.5;">
-                                학교 행사 또는 관리자 설정으로 인해<br><strong>현재 시설 예약이 임시 중단</strong>되었습니다.<br><br>
+                                시스템 점검 또는 관리자 설정으로 인해<br><strong>현재 시설 예약이 임시 중단</strong>되었습니다.<br><br>
                                 양해 부탁드리며, 추후 다시 접속해 주세요.
                             </p>
                             <a href="status.html" class="btn btn-primary mt-3 w-100" style="padding:12px; border-radius:10px;">현재 예약 현황 보기</a>
@@ -184,7 +182,7 @@
                 `;
             }
         }
-        checkAdminBlock(); // 스크립트 실행 시 즉시 체크
+        checkAdminBlock(); 
 
         let termsModal;
 
@@ -310,17 +308,26 @@
             const start = new Date(`${useDate}T${startTime}`);
             const end = new Date(`${useDate}T${endTime}`);
 
+            // ✨ 'blocked'(관리자 특수차단)가 포함된 목록을 가져옵니다 ✨
             const { data: existing } = await _supabase
                 .from('reservations')
                 .select('*')
                 .eq('room_name', room)
-                .in('status', ['approved', 'pending']) 
+                .in('status', ['approved', 'pending', 'blocked']) 
                 .filter('start_time', 'lt', end.toISOString())
                 .filter('end_time', 'gt', start.toISOString());
 
             let finalStatus = 'pending';
 
             if (existing && existing.length > 0) { 
+                // ✨ 겹치는 시간 중 관리자 차단('blocked')이 하나라도 있으면 즉시 튕겨냄 ✨
+                const isBlocked = existing.some(r => r.status === 'blocked');
+                if (isBlocked) {
+                    alert("해당 시간은 관리자에 의해 예약이 제한(차단)되었습니다. 다른 시간을 선택해 주세요.");
+                    termsModal.hide();
+                    return;
+                }
+
                 const wantStandby = confirm("이미 예약이 마감되었습니다. 대기 예약하시겠습니까?\n(기존 예약 취소 시 관리자 승인 후 이용 가능)");
                 if (!wantStandby) {
                     termsModal.hide();
