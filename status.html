@@ -14,6 +14,9 @@
         .badge-rejected { background: #dc3545; color: white; }
         .badge-cancelled { background: #6c757d; color: white; }
         
+        /* ✨ 관리자 차단 상태 뱃지 스타일 추가 ✨ */
+        .badge-blocked { background: #343a40; color: white; } 
+        
         .info-box {
             background-color: #f8f9fa; 
             border: 1px solid #e9ecef;
@@ -100,7 +103,6 @@
         }
 
         async function loadStatus() {
-            // 우선권이 있는 항목을 먼저 정렬할 수도 있지만, 우선 시간순으로 나열
             const { data } = await _supabase.from('reservations').select('*').order('start_time', { ascending: false });
             const list = document.getElementById('public-list');
             list.innerHTML = '';
@@ -112,15 +114,24 @@
                 else if(res.status === 'standby') { badgeClass = 'badge-standby'; badgeText = '취소 대기'; }
                 else if(res.status === 'rejected') { badgeClass = 'badge-rejected'; badgeText = '이용 불가'; }
                 else if(res.status === 'cancelled') { badgeClass = 'badge-cancelled'; badgeText = '예약 취소됨'; }
+                // ✨ 관리자 부분 차단 표시 로직 추가 ✨
+                else if(res.status === 'blocked') { badgeClass = 'badge-blocked'; badgeText = '예약 제한'; }
 
                 const compactTime = formatCompactTime(res.start_time, res.end_time);
                 
-                // ✨ 우선권 뱃지 추가 ✨
-                const priorityBadge = res.is_priority ? `<br><span class="badge bg-danger mt-1">우선권</span>` : '';
+                // 관리자 차단건에는 우선권 뱃지가 뜨지 않도록 예외 처리
+                const priorityBadge = (res.is_priority && res.status !== 'blocked') ? `<br><span class="badge bg-danger mt-1">우선권</span>` : '';
                 const roomName = res.room_name.replace(' ', '<br>') + priorityBadge; 
 
+                // ✨ 차단된 상태일 경우 이름 부분에 '시스템 차단' 표시 ✨
+                let displayName = `${res.student_name.charAt(0)}*${res.student_name.charAt(res.student_name.length-1)}<br><span class="text-muted" style="font-size:0.75rem;">(${res.student_id.toString().substring(0,2)}**)</span>`;
+                
+                if (res.status === 'blocked') {
+                    displayName = `<span class="text-danger fw-bold" style="font-size: 0.85rem;">시스템<br>차단</span>`;
+                }
+
                 const row = `<tr>
-                    <td>${res.student_name.charAt(0)}*${res.student_name.charAt(res.student_name.length-1)}<br><span class="text-muted" style="font-size:0.75rem;">(${res.student_id.substring(0,2)}**)</span></td>
+                    <td>${displayName}</td>
                     <td class="fw-bold">${roomName}</td>
                     <td>${compactTime}</td>
                     <td><span class="badge ${badgeClass}">${badgeText}</span></td>
