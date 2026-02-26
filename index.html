@@ -13,7 +13,6 @@
         .btn-primary { background-color: #004a99; border: none; padding: 12px; font-weight: bold; border-radius: 10px; }
         .notice-box { background-color: #fff3cd; color: #856404; padding: 10px; border-radius: 8px; text-align: center; font-size: 0.9rem; font-weight: bold; margin-bottom: 20px; }
         
-        /* 약관 스크롤 박스 */
         .terms-box {
             max-height: 250px; 
             overflow-y: auto; 
@@ -24,6 +23,7 @@
         }
     </style>
     <script>
+        // 기본 시간대 차단 (일요일 18시 ~ 월요일 18시)
         function checkBookingWindow() {
             const now = new Date();
             const day = now.getDay(); 
@@ -54,27 +54,19 @@
                     function updateCountdown() {
                         const currentTime = new Date();
                         const targetTime = new Date();
-                        
-                        if (currentTime.getDay() === 0) { 
-                            targetTime.setDate(currentTime.getDate() + 1);
-                        }
+                        if (currentTime.getDay() === 0) { targetTime.setDate(currentTime.getDate() + 1); }
                         targetTime.setHours(18, 0, 0, 0); 
-
                         const diff = targetTime - currentTime;
                         if (diff <= 0) { location.reload(); return; }
-
                         const hours = Math.floor(diff / (1000 * 60 * 60));
                         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                         const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
                         const h = String(hours).padStart(2, '0');
                         const m = String(minutes).padStart(2, '0');
                         const s = String(seconds).padStart(2, '0');
-
                         const countdownEl = document.getElementById("countdown");
                         if(countdownEl) countdownEl.innerText = `${h}:${m}:${s}`;
                     }
-
                     updateCountdown(); 
                     setInterval(updateCountdown, 1000);
                 });
@@ -85,33 +77,17 @@
 </head>
 <body>
     <div class="reservation-card">
-        <h2 class="header-title">🏫 무룡고등학교 시설 예약</h2>
-        
+        <h2 class="header-title">무룡고등학교 시설 예약</h2>
         <div class="notice-box">
             🔔 안내: 현재 [다음 주 월~금] 일정 예약 진행 중<br>
             (이용 가능 시간: 07:00 ~ 16:00 / <strong>최대 2시간</strong>)
         </div>
         
-        <div class="mb-3">
-            <label class="form-label">이용자 이름</label>
-            <input type="text" id="name" class="form-control" placeholder="성함을 입력하세요">
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">학번 (4자리)</label>
-            <input type="number" id="sid" class="form-control" placeholder="예: 1201" oninput="if(this.value.length > 4) this.value = this.value.slice(0, 4);">
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">전화번호 (- 제외 11자리)</label>
-            <input type="tel" id="phone" class="form-control" placeholder="01012345678" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">이용 목적</label>
-            <input type="text" id="purpose" class="form-control" placeholder="예: 동아리 회의, 멘토링, 자습 등">
-        </div>
-
+        <div class="mb-3"><label class="form-label">이용자 이름</label><input type="text" id="name" class="form-control" placeholder="성함을 입력하세요"></div>
+        <div class="mb-3"><label class="form-label">학번 (4자리)</label><input type="number" id="sid" class="form-control" placeholder="예: 1201" oninput="if(this.value.length > 4) this.value = this.value.slice(0, 4);"></div>
+        <div class="mb-3"><label class="form-label">전화번호 (- 제외 11자리)</label><input type="tel" id="phone" class="form-control" placeholder="01012345678" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '');"></div>
+        <div class="mb-3"><label class="form-label">이용 목적</label><input type="text" id="purpose" class="form-control" placeholder="예: 동아리 회의, 멘토링, 자습 등"></div>
+        
         <div class="mb-3">
             <label class="form-label">시설 선택</label>
             <select id="room" class="form-select">
@@ -130,20 +106,11 @@
             </div>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">이용 일자 (다음 주 월~금)</label>
-            <select id="use_date" class="form-select"></select>
-        </div>
+        <div class="mb-3"><label class="form-label">이용 일자 (다음 주 월~금)</label><select id="use_date" class="form-select"></select></div>
 
         <div class="row">
-            <div class="col-6 mb-3">
-                <label class="form-label">시작 시간</label>
-                <select id="start_time" class="form-select"></select>
-            </div>
-            <div class="col-6 mb-3">
-                <label class="form-label">종료 시간</label>
-                <select id="end_time" class="form-select"></select>
-            </div>
+            <div class="col-6 mb-3"><label class="form-label">시작 시간</label><select id="start_time" class="form-select"></select></div>
+            <div class="col-6 mb-3"><label class="form-label">종료 시간</label><select id="end_time" class="form-select"></select></div>
         </div>
 
         <div class="mb-4 p-3 border rounded bg-light">
@@ -152,9 +119,7 @@
         </div>
 
         <button onclick="openTermsModal()" class="btn btn-primary w-100">예약 신청하기</button>
-        <div class="text-center mt-3">
-            <a href="status.html" class="text-secondary small" style="text-decoration: none;">📅 실시간 예약 현황 및 취소</a>
-        </div>
+        <div class="text-center mt-3"><a href="status.html" class="text-secondary small" style="text-decoration: none;">📅 실시간 예약 현황 및 취소</a></div>
     </div>
 
     <div class="modal fade" id="termsModal" tabindex="-1" aria-hidden="true">
@@ -177,7 +142,6 @@
                     <li><strong class="text-dark">CCTV 운영 안내</strong><br>- 시설 안전 및 관리를 위해 CCTV가 상시 녹화 중입니다.</li>
                 </ol>
             </div>
-            
             <div class="border-top pt-3">
                 <p id="scrollMsg" class="text-danger small fw-bold mb-2">🚨 약관을 끝까지 스크롤해야 동의를 입력할 수 있습니다.</p>
                 <div class="input-group">
@@ -185,7 +149,6 @@
                     <input type="text" id="agreeText" class="form-control" placeholder="'동의합니다' 라고 적어주세요" disabled>
                 </div>
             </div>
-
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
@@ -201,6 +164,27 @@
         const SUPABASE_URL = 'https://uuimbwgcboqcavrouxtv.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_GR9xwY16SVWEbfc648iOUA_U9za_DaN';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // ✨ 관리자가 강제 차단했는지 DB에서 확인하는 로직 (하단에서 실행됨) ✨
+        async function checkAdminBlock() {
+            const { data } = await _supabase.from('site_settings').select('is_booking_blocked').eq('id', 1).single();
+            if (data && data.is_booking_blocked) {
+                document.body.innerHTML = `
+                    <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:90vh; text-align:center;">
+                        <div style="background:white; padding:40px; border-radius:20px; box-shadow:0 8px 20px rgba(0,0,0,0.1); max-width:400px; width:100%;">
+                            <h1 style="font-size:3rem; margin-bottom:10px;">🚧</h1>
+                            <h3 style="color:#2c3e50; font-weight:bold; margin-bottom:15px;">예약 임시 중단 안내</h3>
+                            <p style="color:#6c757d; font-size:0.95rem; line-height:1.5;">
+                                학교 행사 또는 관리자 설정으로 인해<br><strong>현재 시설 예약이 임시 중단</strong>되었습니다.<br><br>
+                                양해 부탁드리며, 추후 다시 접속해 주세요.
+                            </p>
+                            <a href="status.html" class="btn btn-primary mt-3 w-100" style="padding:12px; border-radius:10px;">현재 예약 현황 보기</a>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        checkAdminBlock(); // 스크립트 실행 시 즉시 체크
 
         let termsModal;
 
@@ -224,7 +208,6 @@
 
             const now = new Date();
             const dayOfWeek = now.getDay();
-            
             let daysToNextMonday;
             if (dayOfWeek === 0) { daysToNextMonday = 1; } 
             else { daysToNextMonday = 8 - dayOfWeek; }
@@ -236,16 +219,13 @@
             for (let i = 0; i < 5; i++) {
                 const targetDate = new Date(targetMonday);
                 targetDate.setDate(targetMonday.getDate() + i);
-                
                 const offset = targetDate.getTimezoneOffset() * 60000;
                 const valueStr = (new Date(targetDate - offset)).toISOString().split('T')[0];
                 const displayStr = `${targetDate.getMonth() + 1}/${targetDate.getDate()} (${daysKo[targetDate.getDay()]})`;
-                
                 dateSelect.add(new Option(displayStr, valueStr));
             }
         }
 
-        // ✨ 시간 변경 (07시부터 16시까지만) ✨
         function populateTimeSelects() {
             const startSelect = document.getElementById('start_time');
             const endSelect = document.getElementById('end_time');
@@ -255,7 +235,7 @@
                 let hour = i.toString().padStart(2, '0');
                 startSelect.add(new Option(`${hour}:00`, `${hour}:00`));
                 endSelect.add(new Option(`${hour}:00`, `${hour}:00`));
-                if (i !== 16) { // 16:30은 옵션에서 제외되도록 처리
+                if (i !== 16) { 
                     startSelect.add(new Option(`${hour}:30`, `${hour}:30`));
                     endSelect.add(new Option(`${hour}:30`, `${hour}:30`));
                 }
@@ -341,7 +321,7 @@
             let finalStatus = 'pending';
 
             if (existing && existing.length > 0) { 
-                const wantStandby = confirm("예약이 마감되었습니다. 대기 예약하시겠습니까?\n(기존 예약 취소 시 관리자 승인 후 이용 가능)");
+                const wantStandby = confirm("이미 예약이 마감되었습니다. 대기 예약하시겠습니까?\n(기존 예약 취소 시 관리자 승인 후 이용 가능)");
                 if (!wantStandby) {
                     termsModal.hide();
                     return; 
