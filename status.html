@@ -14,6 +14,7 @@
         .badge-rejected { background: #dc3545; color: white; }
         .badge-cancelled { background: #6c757d; color: white; }
         .badge-blocked { background: #343a40; color: white; } 
+        .badge-used { background: #0d6efd; color: white; } 
         
         .info-box { background-color: #f8f9fa; border: 1px solid #e9ecef; border-left: 4px solid #004a99; padding: 15px; border-radius: 8px; text-align: center; font-size: 0.9rem; line-height: 1.6; color: #495057; margin-bottom: 20px; }
         .info-box strong { color: #004a99; font-weight: bold; } 
@@ -24,43 +25,55 @@
 <body>
     <div class="container shadow-sm">
         <h2 class="text-center mt-2 mb-3">무룡고등학교 시설 예약 현황</h2>
-        
-        <div class="info-box">
-            💡 <strong>승인된 예약</strong>만 시설 이용이 가능하며,<br>
-            승인된 예약은 <strong>QR 패스</strong>로 본인 확인이 진행됩니다.
-        </div>
-
+        <div class="info-box">💡 <strong>승인된 예약</strong>만 시설 이용이 가능하며,<br>승인된 예약은 <strong>QR 패스</strong>로 본인 확인이 진행됩니다.</div>
         <div class="table-responsive" style="overflow-x: hidden;">
             <table class="table table-sm">
-                <thead class="table-light">
-                    <tr>
-                        <th>이름</th>
-                        <th>장소</th>
-                        <th>시간</th>
-                        <th>상태</th>
-                    </tr>
-                </thead>
+                <thead class="table-light"><tr><th>이름</th><th>장소</th><th>시간</th><th>상태</th></tr></thead>
                 <tbody id="public-list"></tbody>
             </table>
         </div>
-        
         <div class="d-flex justify-content-center gap-3 mt-4">
             <button class="btn btn-outline-danger fw-bold" onclick="openCancelModal()">내 예약 취소하기</button>
             <a href="index.html" class="btn btn-primary fw-bold">예약하러 가기</a>
         </div>
     </div>
 
+    <div class="modal fade" id="qrPwModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold">🔒 QR 패스 비밀번호</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body text-center">
+            <p class="small text-muted mb-3">본인 확인을 위해 설정하신 <strong>숫자 4자리</strong>를 입력해주세요.</p>
+            <input type="password" id="qr-pw-input" class="form-control text-center mb-2" placeholder="숫자 4자리" maxlength="4" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+            <button class="btn btn-dark w-100 fw-bold mt-2" onclick="verifyQrPw()">QR코드 보기</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="modal fade" id="qrModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
           <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-              <h5 class="modal-title fw-bold">📱 모바일 QR 패스</h5>
+            <div class="modal-header bg-dark text-white">
+              <h5 class="modal-title fw-bold">모바일 QR 패스</h5>
               <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body text-center py-4">
               <h5 id="qr-student-name" class="fw-bold mb-3"></h5>
-              <p class="text-muted small mb-4">관리자에게 아래 QR코드를 보여주세요.</p>
-              <img id="qr-image" src="" alt="QR Code" style="width: 200px; height: 200px; border: 1px solid #ddd; padding: 10px; border-radius: 10px;">
+              
+              <div id="qr-display-area">
+                  <p class="text-muted small mb-4">관리자에게 아래 QR코드를 보여주세요.</p>
+                  <img id="qr-image" src="" alt="QR Code" style="width: 200px; height: 200px; border: 1px solid #ddd; padding: 10px; border-radius: 10px;">
+              </div>
+
+              <div id="qr-success-msg" style="display: none;">
+                  <h1 style="font-size: 4rem;">✅</h1>
+                  <h4 class="fw-bold text-primary mt-3">인증이 완료되었습니다</h4>
+                  <p class="text-muted mt-2">안전하게 시설을 이용해 주세요.</p>
+              </div>
             </div>
             <div class="modal-footer justify-content-center">
               <button type="button" class="btn btn-secondary w-50" data-bs-dismiss="modal">닫기</button>
@@ -80,7 +93,7 @@
             <p class="small text-muted">예약 시 입력했던 정보를 정확히 입력해 주세요.</p>
             <input type="text" id="c_name" class="form-control mb-2" placeholder="이름">
             <input type="number" id="c_sid" class="form-control mb-2" placeholder="학번 4자리">
-            <input type="password" id="c_pw" class="form-control mb-2" placeholder="예약 비밀번호">
+            <input type="password" id="c_pw" class="form-control mb-2" placeholder="비밀번호 (숫자 4자리)" maxlength="4" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
@@ -96,12 +109,22 @@
         const SUPABASE_URL = 'https://uuimbwgcboqcavrouxtv.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_GR9xwY16SVWEbfc648iOUA_U9za_DaN';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
         let cancelModal;
+        let qrPwModal;
         let qrModal;
+        let currentQrId = '';
+        let currentQrName = '';
+        let qrCheckInterval; 
+
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById('qrModal').addEventListener('hidden.bs.modal', function () {
+                if(qrCheckInterval) clearInterval(qrCheckInterval);
+            });
+        });
 
         function formatCompactTime(startStr, endStr) {
-            const d1 = new Date(startStr);
-            const d2 = new Date(endStr);
+            const d1 = new Date(startStr); const d2 = new Date(endStr);
             const datePart = `${d1.getMonth()+1}/${d1.getDate()}`;
             const time1 = `${String(d1.getHours()).padStart(2,'0')}:${String(d1.getMinutes()).padStart(2,'0')}`;
             const time2 = `${String(d2.getHours()).padStart(2,'0')}:${String(d2.getMinutes()).padStart(2,'0')}`;
@@ -120,7 +143,8 @@
                 else if(res.status === 'standby') { badgeClass = 'badge-standby'; badgeText = '취소 대기'; }
                 else if(res.status === 'rejected') { badgeClass = 'badge-rejected'; badgeText = '이용 불가'; }
                 else if(res.status === 'cancelled') { badgeClass = 'badge-cancelled'; badgeText = '예약 취소됨'; }
-                else if(res.status === 'blocked') { badgeClass = 'badge-blocked'; badgeText = '🚫 예약 제한'; }
+                else if(res.status === 'blocked') { badgeClass = 'badge-blocked'; badgeText = '예약 제한'; }
+                else if(res.status === 'used') { badgeClass = 'badge-used'; badgeText = '사용 완료'; }
 
                 const compactTime = formatCompactTime(res.start_time, res.end_time);
                 const priorityBadge = (res.is_priority && res.status !== 'blocked') ? `<br><span class="badge bg-danger mt-1">우선권</span>` : '';
@@ -129,10 +153,9 @@
                 let displayName = `${res.student_name.charAt(0)}*${res.student_name.charAt(res.student_name.length-1)}<br><span class="text-muted" style="font-size:0.75rem;">(${res.student_id.toString().substring(0,2)}**)</span>`;
                 if (res.status === 'blocked') { displayName = `<span class="text-danger fw-bold" style="font-size: 0.85rem;">시스템<br>차단</span>`; }
 
-                // ✨ 승인된 경우에만 'QR 패스' 버튼 추가 ✨
                 let qrButton = '';
                 if(res.status === 'approved') {
-                    qrButton = `<br><button class="btn btn-dark mt-2" style="font-size: 0.75rem; padding: 2px 8px;" onclick="showQR('${res.id}', '${res.student_name}')">📱 QR 패스</button>`;
+                    qrButton = `<br><button class="btn btn-dark mt-2" style="font-size: 0.75rem; padding: 3px 8px;" onclick="openQrPwModal('${res.id}', '${res.student_name}')">QR 패스</button>`;
                 }
 
                 const row = `<tr>
@@ -145,13 +168,44 @@
             });
         }
 
-        // ✨ QR 코드 모달 띄우기 함수 ✨
-        function showQR(id, name) {
-            document.getElementById('qr-student-name').innerText = `${name} 학생의 패스`;
-            // QR코드 생성 API에 고유 예약 ID를 담아서 호출
-            document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${id}`;
-            qrModal = new bootstrap.Modal(document.getElementById('qrModal'));
-            qrModal.show();
+        function openQrPwModal(id, name) {
+            currentQrId = id;
+            currentQrName = name;
+            document.getElementById('qr-pw-input').value = '';
+            if(!qrPwModal) qrPwModal = new bootstrap.Modal(document.getElementById('qrPwModal'));
+            qrPwModal.show();
+        }
+
+        async function verifyQrPw() {
+            const pw = document.getElementById('qr-pw-input').value;
+            if(!pw) { alert("비밀번호를 입력해주세요."); return; }
+
+            const { data } = await _supabase.from('reservations').select('password').eq('id', currentQrId).single();
+            
+            if(data && data.password === pw) {
+                qrPwModal.hide(); 
+                document.getElementById('qr-student-name').innerText = `${currentQrName} 학생의 패스`;
+                document.getElementById('qr-display-area').style.display = 'block';
+                document.getElementById('qr-success-msg').style.display = 'none';
+                document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${currentQrId}`;
+                
+                if(!qrModal) qrModal = new bootstrap.Modal(document.getElementById('qrModal'));
+                qrModal.show();
+
+                if(qrCheckInterval) clearInterval(qrCheckInterval);
+                qrCheckInterval = setInterval(async () => {
+                    const { data: checkData } = await _supabase.from('reservations').select('status').eq('id', currentQrId).single();
+                    if(checkData && checkData.status === 'used') {
+                        clearInterval(qrCheckInterval);
+                        document.getElementById('qr-display-area').style.display = 'none';
+                        document.getElementById('qr-success-msg').style.display = 'block';
+                        loadStatus(); 
+                    }
+                }, 2000);
+
+            } else {
+                alert("비밀번호가 일치하지 않습니다.");
+            }
         }
 
         function openCancelModal() {
@@ -173,12 +227,8 @@
             }
             const targetId = data[0].id;
             const { error } = await _supabase.from('reservations').update({ status: 'cancelled' }).eq('id', targetId);
-
-            if (!error) {
-                alert("성공적으로 예약이 취소되었습니다.");
-                cancelModal.hide();
-                loadStatus(); 
-            } else { alert("오류 발생: " + error.message); }
+            if (!error) { alert("성공적으로 예약이 취소되었습니다."); cancelModal.hide(); loadStatus(); } 
+            else { alert("오류 발생: " + error.message); }
         }
         loadStatus();
     </script>
