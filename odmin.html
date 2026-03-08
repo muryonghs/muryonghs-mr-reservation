@@ -14,8 +14,6 @@
         .pw-masked { font-family: monospace; letter-spacing: 2px; color: #6c757d; }
         .pw-revealed { font-family: monospace; letter-spacing: 1px; color: #dc3545; font-weight: bold; }
         .header-actions { display: flex; justify-content: flex-end; margin-bottom: 15px; gap: 8px; flex-wrap: wrap; }
-        
-        /* QR 스캐너 화면 스타일 */
         #qr-reader { width: 100%; border-radius: 10px; overflow: hidden; border: none !important; }
     </style>
 </head>
@@ -38,14 +36,14 @@
 
     <div id="admin-section">
         <div class="header-actions">
-            <button class="btn btn-success btn-sm fw-bold shadow-sm" onclick="openScannerModal()">📷 학생 QR 스캔</button>
+            <button class="btn btn-success btn-sm fw-bold shadow-sm" onclick="openScannerModal()">학생 QR 스캔</button>
             <button id="specific-block-btn" class="btn btn-warning btn-sm fw-bold" style="display: none;" onclick="openBlockModal()">⏰ 부분 차단</button>
             <button id="block-btn" class="btn btn-danger btn-sm fw-bold" style="display: none;" onclick="toggleBookingBlock()">🛑 예약 전체 막기</button>
             <button id="super-admin-btn" class="btn btn-dark btn-sm fw-bold" style="display: none;" onclick="openSuperAdmin()">⚙️ 운영 책임자 설정</button>
             <button class="btn btn-outline-secondary btn-sm fw-bold" onclick="logout()">로그아웃</button>
         </div>
 
-        <h2 class="text-center mb-4 mt-2">📢 무룡고 시설 관리 보드</h2>
+        <h2 class="text-center mb-4 mt-2">무룡고 시설 관리 보드</h2>
         
         <div class="table-responsive">
             <table class="table table-hover align-middle" style="min-width: 800px;">
@@ -56,7 +54,7 @@
                         <th>시설명</th>
                         <th>목적</th>
                         <th>이용 시간</th>
-                        <th>취소 비번</th>
+                        <th>설정 비번</th>
                         <th>상태</th>
                         <th>관리 (승인/거절/문자)</th>
                     </tr>
@@ -70,7 +68,7 @@
         <div class="modal-dialog modal-dialog-centered">
           <div class="modal-content">
             <div class="modal-header bg-success text-white">
-              <h5 class="modal-title fw-bold">📷 학생 QR 패스 스캔</h5>
+              <h5 class="modal-title fw-bold">학생 QR 패스 스캔</h5>
               <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" onclick="stopScanner()"></button>
             </div>
             <div class="modal-body text-center p-0 bg-dark">
@@ -87,7 +85,7 @@
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header bg-warning">
-            <h5 class="modal-title fw-bold text-dark">⏰ 특정 시설 및 시간 차단</h5>
+            <h5 class="modal-title fw-bold text-dark">특정 시설 및 시간 차단</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
@@ -131,115 +129,88 @@
 
         async function loadSettings() {
             const { data } = await _supabase.from('site_settings').select('admin_password, is_booking_blocked').eq('id', 1).single();
-            if (data) { 
-                currentAdminPassword = data.admin_password; 
-                isBookingBlocked = data.is_booking_blocked === true;
-                updateBlockButtonUI();
-            } 
+            if (data) { currentAdminPassword = data.admin_password; isBookingBlocked = data.is_booking_blocked === true; updateBlockButtonUI(); } 
         }
         loadSettings(); 
 
-        // ✨ QR 스캐너 제어 로직 ✨
         function openScannerModal() {
             scannerModal = new bootstrap.Modal(document.getElementById('scannerModal'));
             scannerModal.show();
-            
-            // 모달이 완전히 열린 후 카메라 켜기
             setTimeout(() => {
-                html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: {width: 250, height: 250} }, /* verbose= */ false);
+                html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
                 html5QrcodeScanner.render(onScanSuccess, onScanFailure);
             }, 500);
         }
 
         function stopScanner() {
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.clear(); // 카메라 끄기
-            }
+            if (html5QrcodeScanner) { html5QrcodeScanner.clear(); }
         }
 
         async function onScanSuccess(decodedText, decodedResult) {
-            stopScanner(); // 스캔 성공 시 즉시 카메라 끄기
-            scannerModal.hide(); // 모달창 닫기
+            stopScanner(); 
+            scannerModal.hide(); 
             
-            // DB에서 QR코드에 담긴 ID로 예약 내역 조회
             const { data, error } = await _supabase.from('reservations').select('*').eq('id', decodedText).single();
             
             if (data) {
                 const timeStr = `${formatTime(data.start_time)} ~ ${formatTime(data.end_time)}`;
+                
                 if(data.status === 'approved') {
-                    alert(`✅ [정상 승인 확인]\n\n이름: ${data.student_name} (${data.student_id})\n장소: ${data.room_name}\n시간: ${timeStr}`);
+                    const { error: updateErr } = await _supabase.from('reservations').update({ status: 'used' }).eq('id', decodedText);
+                    if(!updateErr) {
+                        alert(`[인증 성공]\n\n이름: ${data.student_name} (${data.student_id})\n장소: ${data.room_name}\n시간: ${timeStr}\n\n'사용 완료' 처리되었습니다.`);
+                        load(); 
+                    } else {
+                        alert("오류 발생: " + updateErr.message);
+                    }
+                } else if(data.status === 'used') {
+                    alert(`[재사용 불가]\n\n이미 인증이 완료되어 사용 처리된 QR코드입니다.`);
                 } else if(data.status === 'pending' || data.status === 'standby') {
-                    alert(`⚠️ [미승인 예약]\n\n아직 관리자 승인이 완료되지 않은 예약입니다.\n상태: 대기 중`);
+                    alert(`[미승인 예약]\n\n아직 관리자 승인이 완료되지 않은 예약입니다.`);
                 } else {
-                    alert(`❌ [이용 불가]\n\n취소되거나 거절된 예약입니다.`);
+                    alert(`[이용 불가]\n\n취소되거나 거절된 예약입니다.`);
                 }
             } else {
-                alert("❌ 시스템에 등록되지 않은 잘못된 QR코드입니다.");
+                alert("시스템에 등록되지 않은 잘못된 QR코드입니다.");
             }
         }
 
-        function onScanFailure(error) {
-            // 카메라가 코드를 계속 찾고 있는 상태 (에러창 띄우지 않음)
-        }
+        function onScanFailure(error) {}
 
         function updateBlockButtonUI() {
             const btn = document.getElementById('block-btn');
             if (!btn) return;
-            if (isBookingBlocked) {
-                btn.innerText = "🟢 예약 열기";
-                btn.classList.replace('btn-danger', 'btn-success');
-            } else {
-                btn.innerText = "🛑 예약 전체 막기";
-                btn.classList.replace('btn-success', 'btn-danger');
-            }
+            if (isBookingBlocked) { btn.innerText = "🟢 예약 열기"; btn.classList.replace('btn-danger', 'btn-success'); } 
+            else { btn.innerText = "🛑 예약 전체 막기"; btn.classList.replace('btn-success', 'btn-danger'); }
         }
 
         async function toggleBookingBlock() {
             const actionMsg = isBookingBlocked ? "예약을 다시 '활성화'하시겠습니까?" : "학생들의 예약을 임시로 '전체 차단'하시겠습니까?";
             if (!confirm(actionMsg)) return;
             const { error } = await _supabase.from('site_settings').update({ is_booking_blocked: !isBookingBlocked }).eq('id', 1);
-            if (!error) {
-                isBookingBlocked = !isBookingBlocked;
-                updateBlockButtonUI();
-                alert(isBookingBlocked ? "✅ 전체 예약이 차단되었습니다." : "✅ 예약이 다시 열렸습니다.");
-            }
+            if (!error) { isBookingBlocked = !isBookingBlocked; updateBlockButtonUI(); alert(isBookingBlocked ? "전체 예약이 차단되었습니다." : "예약이 다시 열렸습니다."); }
         }
 
         function attemptLogin(role) {
             const inputPw = document.getElementById('login-pw').value;
             if (!inputPw) { alert("비밀번호를 입력해주세요."); return; }
-
             if (role === 'admin') {
-                if (inputPw === currentAdminPassword) { loginSuccess('admin'); } 
-                else { alert("관리자 비밀번호가 일치하지 않습니다."); }
+                if (inputPw === currentAdminPassword) { loginSuccess('admin'); } else { alert("관리자 비밀번호가 일치하지 않습니다."); }
             } else if (role === 'super') {
-                if (inputPw === 'mrhsfmo!') { loginSuccess('super'); } 
-                else { alert("운영 책임자 보안코드가 일치하지 않습니다."); }
+                if (inputPw === 'mrhsfmo!') { loginSuccess('super'); } else { alert("운영 책임자 보안코드가 일치하지 않습니다."); }
             }
         }
 
         function loginSuccess(role) {
-            currentRole = role;
-            document.getElementById('login-pw').value = ''; 
-            document.getElementById('login-section').style.display = 'none';
-            document.getElementById('admin-section').style.display = 'block';
+            currentRole = role; document.getElementById('login-pw').value = ''; 
+            document.getElementById('login-section').style.display = 'none'; document.getElementById('admin-section').style.display = 'block';
             document.getElementById('specific-block-btn').style.display = 'inline-block';
-
-            if (role === 'super') {
-                document.getElementById('super-admin-btn').style.display = 'inline-block';
-                document.getElementById('block-btn').style.display = 'inline-block'; 
-            } else {
-                document.getElementById('super-admin-btn').style.display = 'none';
-                document.getElementById('block-btn').style.display = 'none';
-            }
+            if (role === 'super') { document.getElementById('super-admin-btn').style.display = 'inline-block'; document.getElementById('block-btn').style.display = 'inline-block'; } 
+            else { document.getElementById('super-admin-btn').style.display = 'none'; document.getElementById('block-btn').style.display = 'none'; }
             load(); 
         }
 
-        function logout() {
-            currentRole = '';
-            document.getElementById('admin-section').style.display = 'none';
-            document.getElementById('login-section').style.display = 'block';
-        }
+        function logout() { currentRole = ''; document.getElementById('admin-section').style.display = 'none'; document.getElementById('login-section').style.display = 'block'; }
 
         function formatTime(dateStr) {
             const d = new Date(dateStr);
@@ -247,18 +218,24 @@
         }
 
         function getStatusText(status) {
-            if(status === 'pending') return '⏳ 대기 중';
-            if(status === 'approved') return '✅ 승인됨';
-            if(status === 'standby') return '🔄 취소 대기';
-            if(status === 'rejected') return '❌ 거절됨';
-            if(status === 'cancelled') return '🗑️ 본인 취소';
-            if(status === 'blocked') return '🚫 시스템 차단'; 
+            if(status === 'pending') return '대기 중';
+            if(status === 'approved') return '승인됨';
+            if(status === 'standby') return '취소 대기';
+            if(status === 'rejected') return '거절됨';
+            if(status === 'cancelled') return '본인 취소';
+            if(status === 'blocked') return '시스템 차단'; 
+            if(status === 'used') return '사용 완료'; 
             return status;
         }
 
-        function sendSMS(phone, name, room, startTime, endTime) {
+        // ✨ 새로운 문자 템플릿 적용 ✨
+        function sendSMS(phone, room, startTime, endTime) {
+            const d = new Date(startTime);
+            const dateStr = `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`;
             const timeStr = `${formatTime(startTime)} ~ ${formatTime(endTime)}`;
-            const message = `[무룡고등학교 시설 예약 안내]\n\n${name} 학생의 예약이 승인되었습니다.\n\n📌 장소: ${room}\n⏰ 시간: ${timeStr}\n\n이용 약관을 준수하여 깨끗하게 사용해 주시기 바랍니다.`;
+            
+            const message = `[무룡고등학교 시설 예약 확정 안내]\n\n안녕하세요.\n무룡고등학교 시설 예약이 정상적으로 확정되었습니다.\n이용 전 학생회실로 방문하여 QR패스를 제출 및 키 수령하시기 바랍니다.\n\n이용 장소: ${room}\n이용 날짜: ${dateStr}\n이용 시간: ${timeStr}\n키박스 위치: 1층 보건실 옆 학생회실 입구\n※ 사용 후 반드시 키박스에 제출해 주시고, 키박스비밀번호는 예약 시 본인이 지정한 비밀번호이며, 무단 공유 시 이용이 제한될 수 있습니다.\n\n무룡고등학교 시설은 모든 학생이 함께 사용하는 공동 공간입니다. 아래 링크에 접속하여 반드시 확인 및 준수해 주시기 바랍니다.\nhttps://m.site.naver.com/21qLr\n\n📌 예약 취소를 원하실 경우\nhttps://m.site.naver.com/21qL8 접속 후 → 상단 오른쪽 [내 예약 취소하기]를 선택해 주시기 바랍니다.\n\n모두가 쾌적하고 안전하게 사용할 수 있도록 적극적인 협조를 부탁드립니다.`;
+            
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
             const separator = isIOS ? '&' : '?';
             window.location.href = `sms:${phone}${separator}body=${encodeURIComponent(message)}`;
@@ -276,15 +253,15 @@
                 if (res.status === 'blocked') {
                     actionButtons = `<button onclick="unblockSpecificTime('${res.id}')" class="btn btn-sm btn-secondary w-100">차단 해제</button>`;
                 } else if (res.status === 'pending' || res.status === 'standby') {
-                    actionButtons = `
-                        <button onclick="updateStatus('${res.id}', 'approved')" class="btn btn-sm btn-success mb-1 w-100">승인</button><br>
-                        <button onclick="updateStatus('${res.id}', 'rejected')" class="btn btn-sm btn-danger w-100">거절</button>
-                    `;
+                    actionButtons = `<button onclick="updateStatus('${res.id}', 'approved')" class="btn btn-sm btn-success mb-1 w-100">승인</button><br><button onclick="updateStatus('${res.id}', 'rejected')" class="btn btn-sm btn-danger w-100">거절</button>`;
                 } else if (res.status === 'approved') {
-                    actionButtons = `<button onclick="sendSMS('${res.phone}', '${res.student_name}', '${res.room_name}', '${res.start_time}', '${res.end_time}')" class="btn btn-sm btn-info w-100 fw-bold text-white shadow-sm">📱 문자 전송</button>`;
+                    // ✨ 문자 보내기 버튼 (매개변수 수정) ✨
+                    actionButtons = `<button onclick="sendSMS('${res.phone}', '${res.room_name}', '${res.start_time}', '${res.end_time}')" class="btn btn-sm btn-info w-100 fw-bold text-white shadow-sm">문자 전송</button>`;
+                } else if (res.status === 'used') {
+                    actionButtons = `<span class="text-primary fw-bold">인증 완료</span>`;
                 }
                 
-                const pwCell = (res.status === 'blocked') ? '-' : `<span id="pw-text-${res.id}" class="pw-masked">****</span><button id="pw-btn-${res.id}" class="btn btn-sm btn-outline-secondary ms-2" onclick="viewUserPw('${res.id}', '${res.password}')">보기</button>`;
+                const pwCell = (res.status === 'blocked' || res.status === 'used') ? '-' : `<span id="pw-text-${res.id}" class="pw-masked">****</span><button id="pw-btn-${res.id}" class="btn btn-sm btn-outline-secondary ms-2" onclick="viewUserPw('${res.id}', '${res.password}')">보기</button>`;
                 const priorityBadge = res.is_priority ? `<br><span class="badge bg-danger mt-1">⭐우선권</span>` : '';
 
                 let studentInfo = `${res.student_name}<br>(${res.student_id})`;
@@ -297,7 +274,7 @@
                     <td>${res.purpose || '-'}</td>
                     <td class="fw-bold" style="font-size:0.9rem;">${timeString}</td>
                     <td>${pwCell}</td>
-                    <td><span class="${res.status === 'blocked' ? 'text-danger fw-bold' : ''}">${getStatusText(res.status)}</span></td>
+                    <td><span class="${res.status === 'blocked' ? 'text-danger fw-bold' : (res.status === 'used' ? 'text-primary fw-bold' : '')}">${getStatusText(res.status)}</span></td>
                     <td>${actionButtons}</td>
                 </tr>`;
                 list.innerHTML += row;
@@ -305,83 +282,60 @@
         }
 
         function viewUserPw(id, realPw) {
-            const textSpan = document.getElementById(`pw-text-${id}`);
-            textSpan.innerText = realPw || '(없음)';
-            textSpan.className = 'pw-revealed';
-            document.getElementById(`pw-btn-${id}`).style.display = 'none'; 
+            const textSpan = document.getElementById(`pw-text-${id}`); textSpan.innerText = realPw || '(없음)';
+            textSpan.className = 'pw-revealed'; document.getElementById(`pw-btn-${id}`).style.display = 'none'; 
         }
 
         async function updateStatus(id, newStatus) {
             const actionName = newStatus === 'approved' ? '승인' : '거절';
             if (!confirm(`정말 ${actionName}하시겠습니까?`)) return;
             const { error } = await _supabase.from('reservations').update({ status: newStatus }).eq('id', id);
-            if (!error) { alert(`✅ ${actionName} 처리되었습니다.`); load(); } 
+            if (!error) { alert(`${actionName} 처리되었습니다.`); load(); } 
             else { alert('오류 발생: ' + error.message); }
         }
 
         function openBlockModal() {
-            const startSelect = document.getElementById('b_start');
-            const endSelect = document.getElementById('b_end');
-            
+            const startSelect = document.getElementById('b_start'); const endSelect = document.getElementById('b_end');
             if (startSelect.options.length === 0) {
                 for (let i = 7; i <= 16; i++) {
                     let hour = i.toString().padStart(2, '0');
-                    startSelect.add(new Option(`${hour}:00`, `${hour}:00`));
-                    endSelect.add(new Option(`${hour}:00`, `${hour}:00`));
-                    if (i !== 16) { 
-                        startSelect.add(new Option(`${hour}:30`, `${hour}:30`));
-                        endSelect.add(new Option(`${hour}:30`, `${hour}:30`));
-                    }
+                    startSelect.add(new Option(`${hour}:00`, `${hour}:00`)); endSelect.add(new Option(`${hour}:00`, `${hour}:00`));
+                    if (i !== 16) { startSelect.add(new Option(`${hour}:30`, `${hour}:30`)); endSelect.add(new Option(`${hour}:30`, `${hour}:30`)); }
                 }
             }
-            document.getElementById('b_date').value = '';
-            document.getElementById('b_purpose').value = '';
-            blockModal = new bootstrap.Modal(document.getElementById('blockModal'));
-            blockModal.show();
+            document.getElementById('b_date').value = ''; document.getElementById('b_purpose').value = '';
+            blockModal = new bootstrap.Modal(document.getElementById('blockModal')); blockModal.show();
         }
 
         async function submitSpecificBlock() {
-            const room = document.getElementById('b_room').value;
-            const useDate = document.getElementById('b_date').value;
-            const startTime = document.getElementById('b_start').value;
-            const endTime = document.getElementById('b_end').value;
+            const room = document.getElementById('b_room').value; const useDate = document.getElementById('b_date').value;
+            const startTime = document.getElementById('b_start').value; const endTime = document.getElementById('b_end').value;
             const purpose = document.getElementById('b_purpose').value || '관리자 권한 차단';
-
             if (!useDate || !startTime || !endTime) { alert("날짜와 시간을 모두 선택해주세요."); return; }
-            const start = new Date(`${useDate}T${startTime}`);
-            const end = new Date(`${useDate}T${endTime}`);
+            const start = new Date(`${useDate}T${startTime}`); const end = new Date(`${useDate}T${endTime}`);
             if (start >= end) { alert("종료 시간은 시작 시간보다 늦어야 합니다."); return; }
 
             const { error } = await _supabase.from('reservations').insert([{
                 student_name: '관리자 차단', student_id: 9999, phone: '00000000000', purpose: purpose, password: 'admin',
-                room_name: room, start_time: start.toISOString(), end_time: end.toISOString(),
-                status: 'blocked', is_priority: false
+                room_name: room, start_time: start.toISOString(), end_time: end.toISOString(), status: 'blocked', is_priority: false
             }]);
-
-            if (!error) {
-                alert("✅ 지정한 시설과 시간의 예약이 차단되었습니다.");
-                blockModal.hide();
-                load();
-            } else { alert("오류 발생: " + error.message); }
+            if (!error) { alert("지정한 시설과 시간의 예약이 차단되었습니다."); blockModal.hide(); load(); } 
+            else { alert("오류 발생: " + error.message); }
         }
 
         async function unblockSpecificTime(id) {
             if(!confirm("차단을 해제하시겠습니까?")) return;
             const { error } = await _supabase.from('reservations').delete().eq('id', id);
-            if(!error) { alert("✅ 차단이 해제되었습니다."); load(); } 
-            else { alert("오류 발생: " + error.message); }
+            if(!error) { alert("차단이 해제되었습니다."); load(); } else { alert("오류 발생: " + error.message); }
         }
 
         async function openSuperAdmin() {
             const action = prompt(`[운영 책임자 전용 메뉴]\n원하시는 작업을 숫자로 입력하세요.\n\n1. 관리자 비밀번호 변경\n2. 예약 명단 전체 초기화`);
             if (action === '1') {
-                const newPw = prompt(`현재 관리자 비밀번호: ${currentAdminPassword}\n\n새롭게 변경할 비밀번호를 입력하세요.`);
+                const newPw = prompt(`새롭게 변경할 비밀번호를 입력하세요.`);
                 if (newPw) {
                     const { error } = await _supabase.from('site_settings').update({ admin_password: newPw }).eq('id', 1);
-                    if (!error) {
-                        currentAdminPassword = newPw; 
-                        alert(`✅ 관리자 비밀번호가 변경되었습니다.`);
-                    }
+                    if (!error) { currentAdminPassword = newPw; alert(`관리자 비밀번호가 변경되었습니다.`); }
                 }
             } else if (action === '2') {
                 if (confirm("⚠️ 전체 초기화를 진행하시겠습니까?")) {
