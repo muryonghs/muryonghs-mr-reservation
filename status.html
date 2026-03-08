@@ -13,24 +13,10 @@
         .badge-standby { background: #0dcaf0; color: black; }
         .badge-rejected { background: #dc3545; color: white; }
         .badge-cancelled { background: #6c757d; color: white; }
-        
-        /* ✨ 관리자 차단 상태 뱃지 스타일 추가 ✨ */
         .badge-blocked { background: #343a40; color: white; } 
         
-        .info-box {
-            background-color: #f8f9fa; 
-            border: 1px solid #e9ecef;
-            border-left: 4px solid #004a99; 
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            font-size: 0.9rem;
-            line-height: 1.6;
-            color: #495057;
-            margin-bottom: 20px;
-        }
+        .info-box { background-color: #f8f9fa; border: 1px solid #e9ecef; border-left: 4px solid #004a99; padding: 15px; border-radius: 8px; text-align: center; font-size: 0.9rem; line-height: 1.6; color: #495057; margin-bottom: 20px; }
         .info-box strong { color: #004a99; font-weight: bold; } 
-
         .table th, .table td { padding: 8px 4px; vertical-align: middle; text-align: center; font-size: 0.9rem; }
         .table th { font-size: 0.85rem; white-space: nowrap; }
     </style>
@@ -41,7 +27,7 @@
         
         <div class="info-box">
             💡 <strong>승인된 예약</strong>만 시설 이용이 가능하며,<br>
-            승인 시 입력하신 연락처로 <strong>이용 안내 메시지</strong>가 전송됩니다.
+            승인된 예약은 <strong>QR 패스</strong>로 본인 확인이 진행됩니다.
         </div>
 
         <div class="table-responsive" style="overflow-x: hidden;">
@@ -61,6 +47,25 @@
         <div class="d-flex justify-content-center gap-3 mt-4">
             <button class="btn btn-outline-danger fw-bold" onclick="openCancelModal()">내 예약 취소하기</button>
             <a href="index.html" class="btn btn-primary fw-bold">예약하러 가기</a>
+        </div>
+    </div>
+
+    <div class="modal fade" id="qrModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+              <h5 class="modal-title fw-bold">📱 모바일 QR 패스</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+              <h5 id="qr-student-name" class="fw-bold mb-3"></h5>
+              <p class="text-muted small mb-4">관리자에게 아래 QR코드를 보여주세요.</p>
+              <img id="qr-image" src="" alt="QR Code" style="width: 200px; height: 200px; border: 1px solid #ddd; padding: 10px; border-radius: 10px;">
+            </div>
+            <div class="modal-footer justify-content-center">
+              <button type="button" class="btn btn-secondary w-50" data-bs-dismiss="modal">닫기</button>
+            </div>
+          </div>
         </div>
     </div>
 
@@ -92,6 +97,7 @@
         const SUPABASE_KEY = 'sb_publishable_GR9xwY16SVWEbfc648iOUA_U9za_DaN';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let cancelModal;
+        let qrModal;
 
         function formatCompactTime(startStr, endStr) {
             const d1 = new Date(startStr);
@@ -114,30 +120,38 @@
                 else if(res.status === 'standby') { badgeClass = 'badge-standby'; badgeText = '취소 대기'; }
                 else if(res.status === 'rejected') { badgeClass = 'badge-rejected'; badgeText = '이용 불가'; }
                 else if(res.status === 'cancelled') { badgeClass = 'badge-cancelled'; badgeText = '예약 취소됨'; }
-                // ✨ 관리자 부분 차단 표시 로직 추가 ✨
-                else if(res.status === 'blocked') { badgeClass = 'badge-blocked'; badgeText = '예약 제한'; }
+                else if(res.status === 'blocked') { badgeClass = 'badge-blocked'; badgeText = '🚫 예약 제한'; }
 
                 const compactTime = formatCompactTime(res.start_time, res.end_time);
-                
-                // 관리자 차단건에는 우선권 뱃지가 뜨지 않도록 예외 처리
                 const priorityBadge = (res.is_priority && res.status !== 'blocked') ? `<br><span class="badge bg-danger mt-1">우선권</span>` : '';
                 const roomName = res.room_name.replace(' ', '<br>') + priorityBadge; 
 
-                // ✨ 차단된 상태일 경우 이름 부분에 '시스템 차단' 표시 ✨
                 let displayName = `${res.student_name.charAt(0)}*${res.student_name.charAt(res.student_name.length-1)}<br><span class="text-muted" style="font-size:0.75rem;">(${res.student_id.toString().substring(0,2)}**)</span>`;
-                
-                if (res.status === 'blocked') {
-                    displayName = `<span class="text-danger fw-bold" style="font-size: 0.85rem;">시스템<br>차단</span>`;
+                if (res.status === 'blocked') { displayName = `<span class="text-danger fw-bold" style="font-size: 0.85rem;">시스템<br>차단</span>`; }
+
+                // ✨ 승인된 경우에만 'QR 패스' 버튼 추가 ✨
+                let qrButton = '';
+                if(res.status === 'approved') {
+                    qrButton = `<br><button class="btn btn-dark mt-2" style="font-size: 0.75rem; padding: 2px 8px;" onclick="showQR('${res.id}', '${res.student_name}')">📱 QR 패스</button>`;
                 }
 
                 const row = `<tr>
                     <td>${displayName}</td>
                     <td class="fw-bold">${roomName}</td>
                     <td>${compactTime}</td>
-                    <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+                    <td><span class="badge ${badgeClass}">${badgeText}</span>${qrButton}</td>
                 </tr>`;
                 list.innerHTML += row;
             });
+        }
+
+        // ✨ QR 코드 모달 띄우기 함수 ✨
+        function showQR(id, name) {
+            document.getElementById('qr-student-name').innerText = `${name} 학생의 패스`;
+            // QR코드 생성 API에 고유 예약 ID를 담아서 호출
+            document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${id}`;
+            qrModal = new bootstrap.Modal(document.getElementById('qrModal'));
+            qrModal.show();
         }
 
         function openCancelModal() {
