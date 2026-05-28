@@ -6,49 +6,68 @@
     <title>무룡고등학교 시설 예약 현황</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { padding: 15px; background-color: #f1f3f5; font-family: 'Pretendard', sans-serif; }
-        .container { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .badge-pending { background: #ffc107; color: black; }
-        .badge-approved { background: #198754; color: white; }
-        .badge-standby { background: #0dcaf0; color: black; }
-        .badge-rejected { background: #dc3545; color: white; }
-        .badge-cancelled { background: #6c757d; color: white; }
-        .badge-blocked { background: #343a40; color: white; } 
-        .badge-used { background: #0d6efd; color: white; } 
+        /* ✨ Apple 스타일 전역 설정 ✨ */
+        body { padding: 15px; background-color: #f5f5f7; font-family: '-apple-system', 'BlinkMacSystemFont', 'Pretendard', sans-serif; color: #1d1d1f; }
         
-        .info-box { background-color: #f8f9fa; border: 1px solid #e9ecef; border-left: 4px solid #004a99; padding: 15px; border-radius: 8px; text-align: center; font-size: 0.9rem; line-height: 1.6; color: #495057; margin-bottom: 20px; }
-        .info-box strong { color: #004a99; font-weight: bold; } 
-        .table th, .table td { padding: 8px 4px; vertical-align: middle; text-align: center; font-size: 0.9rem; }
-        .table th { font-size: 0.85rem; white-space: nowrap; }
+        .container { background: #ffffff; padding: 25px 20px; border-radius: 20px; box-shadow: 0 4px 24px rgba(0,0,0,0.04); }
+        h2 { font-weight: 700; letter-spacing: -0.5px; font-size: 1.5rem; color: #1d1d1f; }
+        
+        /* 안내 박스 미니멀라이징 */
+        .info-box { background-color: #fbfbfd; border: 1px solid #e5e5ea; padding: 15px; border-radius: 14px; text-align: center; font-size: 0.85rem; line-height: 1.5; color: #86868b; margin-bottom: 20px; }
+        .info-box strong { color: #0071e3; font-weight: 600; } 
+
+        /* 둥글고 깔끔한 표 디자인 */
+        .table { --bs-table-bg: transparent; margin-bottom: 0; }
+        .table th { border-bottom: 2px solid #e5e5ea; color: #86868b; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; padding: 12px 4px; border-top: none; white-space: nowrap; }
+        .table td { border-bottom: 1px solid #f5f5f7; padding: 14px 4px; vertical-align: middle; color: #1d1d1f; font-size: 0.9rem; }
+        
+        /* 파스텔톤 부드러운 뱃지 (Pill 형태) */
+        .badge { border-radius: 20px; padding: 6px 10px; font-weight: 600; font-size: 0.7rem; letter-spacing: -0.2px; }
+        .badge-pending { background: #fdf0cd; color: #9c6500; }
+        .badge-approved { background: #e3f5eb; color: #196a3e; }
+        .badge-standby { background: #e5f0ff; color: #004a99; }
+        .badge-rejected { background: #fce8e6; color: #c92a2a; }
+        .badge-cancelled { background: #f2f2f7; color: #86868b; }
+        .badge-blocked { background: #3a3a3c; color: #ffffff; }
+        .badge-used { background: #0071e3; color: #ffffff; }
+        .badge-priority { background: #ffefed; color: #ff3b30; border: 1px solid #ffcecb; } /* 우선권 뱃지 다듬기 */
+
+        /* 버튼 스타일링 */
+        .btn { border-radius: 12px; font-weight: 600; font-size: 0.9rem; padding: 10px 16px; transition: all 0.2s ease; }
+        .btn-primary { background-color: #0071e3; border: none; }
+        .btn-primary:hover { background-color: #0077ed; }
+        .btn-outline-danger { color: #ff3b30; border-color: #ff3b30; }
+        .btn-outline-danger:hover { background-color: #ff3b30; color: white; }
+        .btn-dark { background-color: #1d1d1f; border: none; }
     </style>
 </head>
 <body>
     <div class="container shadow-sm">
-        <h2 class="text-center mt-2 mb-3">무룡고등학교 시설 예약 현황</h2>
+        <h2 class="text-center mt-2 mb-3">시설 예약 현황</h2>
         <div class="info-box">💡 <strong>승인된 예약</strong>만 시설 이용이 가능하며,<br>승인된 예약은 <strong>QR 패스</strong>로 본인 확인이 진행됩니다.</div>
         <div class="table-responsive" style="overflow-x: hidden;">
             <table class="table table-sm">
-                <thead class="table-light"><tr><th>이름</th><th>장소</th><th>시간</th><th>상태</th></tr></thead>
-                <tbody id="public-list"></tbody>
+                <thead><tr><th class="text-center">이름</th><th class="text-center">장소</th><th class="text-center">시간</th><th class="text-center">상태</th></tr></thead>
+                <tbody id="public-list" class="text-center"></tbody>
             </table>
         </div>
-        <div class="d-flex justify-content-center gap-3 mt-4">
-            <button class="btn btn-outline-danger fw-bold" onclick="openCancelModal()">내 예약 취소하기</button>
-            <a href="index.html" class="btn btn-primary fw-bold">예약하러 가기</a>
+        <div class="d-flex justify-content-center gap-2 mt-4">
+            <button class="btn btn-outline-danger w-50" onclick="openCancelModal()">예약 취소하기</button>
+            <a href="index.html" class="btn btn-primary w-50">예약하러 가기</a>
         </div>
     </div>
 
     <div class="modal fade" id="qrPwModal" tabindex="-1">
       <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title fw-bold">🔒 QR 패스 비밀번호</h5>
+        <div class="modal-content" style="border-radius: 20px; border: none;">
+          <div class="modal-header border-0 pb-0">
+            <h5 class="modal-title fw-bold">🔒 패스 인증</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
-          <div class="modal-body text-center">
-            <p class="small text-muted mb-3">본인 확인을 위해 설정하신 <strong>숫자 4자리</strong>를 입력해주세요.</p>
-            <input type="password" id="qr-pw-input" class="form-control text-center mb-2" placeholder="숫자 4자리" maxlength="4" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
-            <button class="btn btn-dark w-100 fw-bold mt-2" onclick="verifyQrPw()">QR코드 보기</button>
+          <div class="modal-body text-center pt-2">
+            <p class="small text-muted mb-3">설정하신 <strong>숫자 4자리</strong>를 입력해주세요.</p>
+            <input type="password" id="qr-pw-input" class="form-control text-center mb-3 bg-light border-0 py-2" placeholder="비밀번호" maxlength="4" oninput="this.value = this.value.replace(/[^0-9]/g, '');" style="border-radius: 12px; font-weight: bold; letter-spacing: 2px;">
+            <button class="btn btn-dark w-100" onclick="verifyQrPw()">QR코드 열기</button>
           </div>
         </div>
       </div>
@@ -56,27 +75,27 @@
 
     <div class="modal fade" id="qrModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
-            <div class="modal-header bg-dark text-white">
-              <h5 class="modal-title fw-bold">모바일 QR 패스</h5>
+          <div class="modal-content" style="border-radius: 20px; border: none; overflow: hidden;">
+            <div class="modal-header bg-dark text-white border-0">
+              <h5 class="modal-title fw-bold">📱 모바일 패스</h5>
               <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body text-center py-4">
-              <h5 id="qr-student-name" class="fw-bold mb-3"></h5>
+            <div class="modal-body text-center py-5">
+              <h5 id="qr-student-name" class="fw-bold mb-3" style="color: #1d1d1f;"></h5>
               
               <div id="qr-display-area">
                   <p class="text-muted small mb-4">관리자에게 아래 QR코드를 보여주세요.</p>
-                  <img id="qr-image" src="" alt="QR Code" style="width: 200px; height: 200px; border: 1px solid #ddd; padding: 10px; border-radius: 10px;">
+                  <img id="qr-image" src="" alt="QR Code" style="width: 200px; height: 200px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 15px;">
               </div>
 
               <div id="qr-success-msg" style="display: none;">
                   <h1 style="font-size: 4rem;">✅</h1>
-                  <h4 class="fw-bold text-primary mt-3">인증이 완료되었습니다</h4>
+                  <h4 class="fw-bold mt-3" style="color: #0071e3;">인증이 완료되었습니다</h4>
                   <p class="text-muted mt-2">안전하게 시설을 이용해 주세요.</p>
               </div>
             </div>
-            <div class="modal-footer justify-content-center">
-              <button type="button" class="btn btn-secondary w-50" data-bs-dismiss="modal">닫기</button>
+            <div class="modal-footer justify-content-center border-0 pt-0 pb-4">
+              <button type="button" class="btn btn-secondary w-50" data-bs-dismiss="modal" style="background-color: #f2f2f7; color: #1d1d1f; border: none;">닫기</button>
             </div>
           </div>
         </div>
@@ -84,20 +103,20 @@
 
     <div class="modal fade" id="cancelModal" tabindex="-1">
       <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title fw-bold text-danger">🗑️ 내 예약 취소하기</h5>
+        <div class="modal-content" style="border-radius: 20px; border: none;">
+          <div class="modal-header border-0">
+            <h5 class="modal-title fw-bold" style="color: #ff3b30;">내 예약 취소하기</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
-          <div class="modal-body">
-            <p class="small text-muted">예약 시 입력했던 정보를 정확히 입력해 주세요.</p>
-            <input type="text" id="c_name" class="form-control mb-2" placeholder="이름">
-            <input type="number" id="c_sid" class="form-control mb-2" placeholder="학번 4자리">
-            <input type="password" id="c_pw" class="form-control mb-2" placeholder="비밀번호 (숫자 4자리)" maxlength="4" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+          <div class="modal-body pt-1">
+            <p class="small text-muted mb-3">예약 시 입력했던 정보를 입력해 주세요.</p>
+            <input type="text" id="c_name" class="form-control mb-2 bg-light border-0 py-2" placeholder="이름" style="border-radius: 10px;">
+            <input type="number" id="c_sid" class="form-control mb-2 bg-light border-0 py-2" placeholder="학번 4자리" style="border-radius: 10px;">
+            <input type="password" id="c_pw" class="form-control mb-3 bg-light border-0 py-2" placeholder="비밀번호 (숫자 4자리)" maxlength="4" oninput="this.value = this.value.replace(/[^0-9]/g, '');" style="border-radius: 10px;">
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
-            <button type="button" class="btn btn-danger" onclick="processCancel()">예약 취소</button>
+          <div class="modal-footer border-0 pt-0">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="background-color: #f2f2f7; color: #1d1d1f; border: none;">닫기</button>
+            <button type="button" class="btn btn-danger px-4" onclick="processCancel()">예약 취소</button>
           </div>
         </div>
       </div>
@@ -123,16 +142,19 @@
             });
         });
 
+        // ✨ 시간 포맷 가독성 개선 ✨
         function formatCompactTime(startStr, endStr) {
             const d1 = new Date(startStr); const d2 = new Date(endStr);
-            const datePart = `${d1.getMonth()+1}/${d1.getDate()}`;
+            const daysKo = ['일', '월', '화', '수', '목', '금', '토'];
+            const datePart = `${d1.getMonth()+1}.${d1.getDate()} <span style="font-weight:normal; font-size:0.75rem;">(${daysKo[d1.getDay()]})</span>`;
             const time1 = `${String(d1.getHours()).padStart(2,'0')}:${String(d1.getMinutes()).padStart(2,'0')}`;
             const time2 = `${String(d2.getHours()).padStart(2,'0')}:${String(d2.getMinutes()).padStart(2,'0')}`;
-            return `<strong style="font-size:0.95rem;">${datePart}</strong><br><span class="text-secondary" style="font-size:0.8rem;">${time1}~${time2}</span>`;
+            return `<strong style="font-size:0.9rem; color:#1d1d1f;">${datePart}</strong><br><span style="font-size:0.8rem; color:#86868b;">${time1} - ${time2}</span>`;
         }
 
         async function loadStatus() {
-            const { data } = await _supabase.from('reservations').select('*').order('start_time', { ascending: false });
+            // ✨ 시간순 오름차순(ascending: true) 정렬로 변경 (월요일 -> 금요일 순으로 보이게) ✨
+            const { data } = await _supabase.from('reservations').select('*').order('start_time', { ascending: true });
             const list = document.getElementById('public-list');
             list.innerHTML = '';
             
@@ -142,25 +164,25 @@
                 else if(res.status === 'approved') { badgeClass = 'badge-approved'; badgeText = '승인 완료'; }
                 else if(res.status === 'standby') { badgeClass = 'badge-standby'; badgeText = '취소 대기'; }
                 else if(res.status === 'rejected') { badgeClass = 'badge-rejected'; badgeText = '이용 불가'; }
-                else if(res.status === 'cancelled') { badgeClass = 'badge-cancelled'; badgeText = '예약 취소됨'; }
+                else if(res.status === 'cancelled') { badgeClass = 'badge-cancelled'; badgeText = '취소됨'; }
                 else if(res.status === 'blocked') { badgeClass = 'badge-blocked'; badgeText = '예약 제한'; }
                 else if(res.status === 'used') { badgeClass = 'badge-used'; badgeText = '사용 완료'; }
 
                 const compactTime = formatCompactTime(res.start_time, res.end_time);
-                const priorityBadge = (res.is_priority && res.status !== 'blocked') ? `<br><span class="badge bg-danger mt-1">우선권</span>` : '';
-                const roomName = res.room_name.replace(' ', '<br>') + priorityBadge; 
+                const priorityBadge = (res.is_priority && res.status !== 'blocked') ? `<br><span class="badge badge-priority mt-1">⭐ 우선권</span>` : '';
+                const roomName = `<span style="font-weight:600;">${res.room_name}</span>${priorityBadge}`; 
 
-                let displayName = `${res.student_name.charAt(0)}*${res.student_name.charAt(res.student_name.length-1)}<br><span class="text-muted" style="font-size:0.75rem;">(${res.student_id.toString().substring(0,2)}**)</span>`;
-                if (res.status === 'blocked') { displayName = `<span class="text-danger fw-bold" style="font-size: 0.85rem;">시스템<br>차단</span>`; }
+                let displayName = `<span style="font-weight:600;">${res.student_name.charAt(0)}*${res.student_name.charAt(res.student_name.length-1)}</span><br><span style="font-size:0.75rem; color:#86868b;">${res.student_id.toString().substring(0,2)}**</span>`;
+                if (res.status === 'blocked') { displayName = `<span class="fw-bold" style="font-size: 0.85rem; color:#ff3b30;">시스템<br>차단</span>`; }
 
                 let qrButton = '';
                 if(res.status === 'approved') {
-                    qrButton = `<br><button class="btn btn-dark mt-2" style="font-size: 0.75rem; padding: 3px 8px;" onclick="openQrPwModal('${res.id}', '${res.student_name}')">QR 패스</button>`;
+                    qrButton = `<br><button class="btn btn-dark mt-2" style="font-size: 0.7rem; padding: 4px 10px;" onclick="openQrPwModal('${res.id}', '${res.student_name}')">QR 패스</button>`;
                 }
 
                 const row = `<tr>
                     <td>${displayName}</td>
-                    <td class="fw-bold">${roomName}</td>
+                    <td>${roomName}</td>
                     <td>${compactTime}</td>
                     <td><span class="badge ${badgeClass}">${badgeText}</span>${qrButton}</td>
                 </tr>`;
@@ -169,8 +191,7 @@
         }
 
         function openQrPwModal(id, name) {
-            currentQrId = id;
-            currentQrName = name;
+            currentQrId = id; currentQrName = name;
             document.getElementById('qr-pw-input').value = '';
             if(!qrPwModal) qrPwModal = new bootstrap.Modal(document.getElementById('qrPwModal'));
             qrPwModal.show();
@@ -181,13 +202,12 @@
             if(!pw) { alert("비밀번호를 입력해주세요."); return; }
 
             const { data } = await _supabase.from('reservations').select('password').eq('id', currentQrId).single();
-            
             if(data && data.password === pw) {
                 qrPwModal.hide(); 
                 document.getElementById('qr-student-name').innerText = `${currentQrName} 학생의 패스`;
                 document.getElementById('qr-display-area').style.display = 'block';
                 document.getElementById('qr-success-msg').style.display = 'none';
-                document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${currentQrId}`;
+                document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${currentQrId}&margin=10`;
                 
                 if(!qrModal) qrModal = new bootstrap.Modal(document.getElementById('qrModal'));
                 qrModal.show();
@@ -202,10 +222,7 @@
                         loadStatus(); 
                     }
                 }, 2000);
-
-            } else {
-                alert("비밀번호가 일치하지 않습니다.");
-            }
+            } else { alert("❌ 비밀번호가 일치하지 않습니다."); }
         }
 
         function openCancelModal() {
@@ -219,12 +236,9 @@
             const pw = document.getElementById('c_pw').value;
             if(!name || !sid || !pw) { alert("모든 정보를 입력해 주세요."); return; }
 
-            const { data } = await _supabase.from('reservations').select('*')
-                .eq('student_name', name).eq('student_id', sid).eq('password', pw).in('status', ['pending', 'approved', 'standby']);
-
-            if (!data || data.length === 0) {
-                alert("일치하는 예약 정보가 없거나, 이미 취소/거절된 예약입니다."); return;
-            }
+            const { data } = await _supabase.from('reservations').select('*').eq('student_name', name).eq('student_id', sid).eq('password', pw).in('status', ['pending', 'approved', 'standby']);
+            if (!data || data.length === 0) { alert("일치하는 예약 정보가 없거나, 이미 취소/거절된 예약입니다."); return; }
+            
             const targetId = data[0].id;
             const { error } = await _supabase.from('reservations').update({ status: 'cancelled' }).eq('id', targetId);
             if (!error) { alert("성공적으로 예약이 취소되었습니다."); cancelModal.hide(); loadStatus(); } 
