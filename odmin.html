@@ -65,10 +65,10 @@
 
     <div id="admin-section">
         <div class="header-actions">
-            <button class="btn btn-success btn-sm shadow-sm" onclick="openScannerModal()">📷 학생 QR 스캔</button>
+            <button class="btn btn-success btn-sm shadow-sm" onclick="openScannerModal()">학생 QR 스캔</button>
             <button id="specific-block-btn" class="btn btn-warning btn-sm" style="display: none; background-color: #ff9500; color:white; border:none;" onclick="openBlockModal()">⏰ 부분 차단</button>
-            <button id="block-btn" class="btn btn-danger btn-sm" style="display: none;" onclick="toggleBookingBlock()">🛑 예약 전체 막기</button>
-            <button id="super-admin-btn" class="btn btn-dark btn-sm" style="display: none;" onclick="openSuperAdmin()">⚙️ 설정</button>
+            <button id="block-btn" class="btn btn-danger btn-sm" style="display: none;" onclick="toggleBookingBlock()">예약 전체 막기</button>
+            <button id="super-admin-btn" class="btn btn-dark btn-sm" style="display: none;" onclick="openSuperAdmin()">설정</button>
             <button class="btn btn-outline-secondary btn-sm" onclick="logout()">로그아웃</button>
         </div>
 
@@ -110,7 +110,7 @@
         <div class="modal-dialog modal-dialog-centered">
           <div class="modal-content" style="border-radius: 20px; border: none; overflow: hidden;">
             <div class="modal-header border-0 pb-0 pt-4 px-4 d-flex justify-content-between align-items-center">
-              <h5 class="modal-title fw-bold">📷 QR 패스 스캔</h5>
+              <h5 class="modal-title fw-bold">QR 패스 스캔</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="stopScanner()"></button>
             </div>
             <div class="modal-body text-center p-4">
@@ -125,7 +125,7 @@
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius: 20px; border: none;">
           <div class="modal-header border-0 pb-0 pt-4 px-4 d-flex justify-content-between align-items-center">
-            <h5 class="modal-title fw-bold" style="color: #ff9500;">⏰ 시설 및 시간 차단</h5>
+            <h5 class="modal-title fw-bold" style="color: #ff9500;">시설 및 시간 차단</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body px-4">
@@ -248,7 +248,7 @@
                 globalReservations.forEach(res => {
                     const compactTime = formatCompactTime(res.start_time, res.end_time);
                     const badge = getStatusBadge(res.status);
-                    const priorityBadge = (res.is_priority && res.status !== 'blocked') ? `<span class="badge badge-priority ms-1">⭐우선권</span>` : '';
+                    const priorityBadge = (res.is_priority && res.status !== 'blocked') ? `<span class="badge badge-priority ms-1">우선권</span>` : '';
                     
                     let studentDisplay = `<span style="font-weight:600;">${res.student_name}</span> <span style="font-size:0.75rem; color:#86868b;">(${res.student_id})</span>`;
                     if (res.status === 'blocked') studentDisplay = `<span style="color:#ff3b30; font-weight:600;">관리자 예약 제한</span>`;
@@ -290,7 +290,7 @@
                 const res = currentSelectedRes;
                 
                 // 정보 바인딩
-                const pBadge = (res.is_priority && res.status !== 'blocked') ? ' <span class="badge badge-priority">⭐우선권</span>' : '';
+                const pBadge = (res.is_priority && res.status !== 'blocked') ? ' <span class="badge badge-priority">우선권</span>' : '';
                 document.getElementById('detail-badge-area').innerHTML = getStatusBadge(res.status) + pBadge;
                 document.getElementById('detail-name').innerHTML = res.status === 'blocked' ? '<span class="text-danger">시스템 차단</span>' : `${res.student_name} (${res.student_id})`;
                 document.getElementById('detail-phone').innerText = res.phone || '-';
@@ -316,15 +316,15 @@
                     actionArea.innerHTML = `<button class="btn btn-outline-secondary w-100 py-2" onclick="actionUnblock()">해당 시간 차단 해제</button>`;
                 } else if (res.status === 'pending' || res.status === 'standby') {
                     actionArea.innerHTML = `
-                        <button class="btn btn-primary w-100 py-2" onclick="actionUpdateStatus('approved')">✅ 승인 처리하기</button>
-                        <button class="btn btn-outline-danger w-100 py-2" onclick="actionUpdateStatus('rejected')">❌ 예약 거절(취소)</button>
+                        <button class="btn btn-primary w-100 py-2" onclick="actionUpdateStatus('approved')">승인 처리하기</button>
+                        <button class="btn btn-outline-danger w-100 py-2" onclick="actionUpdateStatus('rejected')">예약 거절(취소)</button>
                     `;
                 } else if (res.status === 'approved') {
                     actionArea.innerHTML = `
-                        <button class="btn btn-success w-100 shadow-sm py-2 mb-1" onclick="actionSendSMS()" style="background-color:#34c759;">📱 문자 안내 발송하기</button>
+                        <button class="btn btn-success w-100 shadow-sm py-2 mb-1" onclick="actionSendSMS()" style="background-color:#34c759;">문자 안내 발송하기</button>
                         <div class="d-flex w-100 gap-2">
-                            <button class="btn btn-primary w-50 py-2" onclick="actionUpdateStatus('used')">✔️ 수동 사용완료</button>
-                            <button class="btn btn-outline-danger w-50 py-2" onclick="actionUpdateStatus('cancelled')">❌ 예약 강제 취소</button>
+                            <button class="btn btn-primary w-50 py-2" onclick="actionUpdateStatus('used')">수동 사용완료</button>
+                            <button class="btn btn-outline-danger w-50 py-2" onclick="actionUpdateStatus('cancelled')">예약 강제 취소</button>
                         </div>
                     `;
                 } else if (res.status === 'used') {
@@ -375,7 +375,7 @@
             if (!confirm(`해당 예약을 ${actionName} 처리하시겠습니까?`)) return;
             const { error } = await _supabase.from('reservations').update({ status: newStatus }).eq('id', id);
             if (!error) { 
-                alert(`✅ ${actionName} 완료`); 
+                alert(`${actionName} 완료`); 
                 bootstrap.Modal.getInstance(document.getElementById('detailModal')).hide(); 
                 load(); 
             } else { alert('오류 발생: ' + error.message); }
@@ -385,7 +385,7 @@
             if(!confirm("해당 시간 차단을 해제하시겠습니까?")) return;
             const { error } = await _supabase.from('reservations').delete().eq('id', id);
             if(!error) { 
-                alert("✅ 차단이 해제되었습니다."); 
+                alert("차단이 해제되었습니다."); 
                 bootstrap.Modal.getInstance(document.getElementById('detailModal')).hide(); 
                 load(); 
             } else { alert("오류 발생: " + error.message); }
@@ -408,11 +408,11 @@
                 const timeStr = `${formatTime(data.start_time).split(' ')[1]} ~ ${formatTime(data.end_time).split(' ')[1]}`;
                 if(data.status === 'approved') {
                     const { error: updateErr } = await _supabase.from('reservations').update({ status: 'used' }).eq('id', decodedText);
-                    if(!updateErr) { alert(`✅ [인증 성공]\n이름: ${data.student_name}\n장소: ${data.room_name}\n시간: ${timeStr}\n\n'사용 완료' 처리되었습니다.`); load(); } 
-                } else if(data.status === 'used') { alert(`❌ 이미 인증이 완료된 QR코드입니다.`);
+                    if(!updateErr) { alert(`[인증 성공]\n이름: ${data.student_name}\n장소: ${data.room_name}\n시간: ${timeStr}\n\n'사용 완료' 처리되었습니다.`); load(); } 
+                } else if(data.status === 'used') { alert(`이미 인증이 완료된 QR코드입니다.`);
                 } else if(data.status === 'pending' || data.status === 'standby') { alert(`⚠️ 아직 승인되지 않은 예약입니다.`);
-                } else { alert(`❌ 취소되거나 거절된 예약입니다.`); }
-            } else { alert("❌ 시스템에 등록되지 않은 코드입니다."); }
+                } else { alert(`취소되거나 거절된 예약입니다.`); }
+            } else { alert("시스템에 등록되지 않은 코드입니다."); }
         }
         function onScanFailure(error) {}
 
@@ -420,8 +420,8 @@
         function updateBlockButtonUI() {
             const btn = document.getElementById('block-btn');
             if (!btn) return;
-            if (isBookingBlocked) { btn.innerText = "🟢 전체 예약 열기"; btn.classList.replace('btn-danger', 'btn-success'); } 
-            else { btn.innerText = "🛑 전체 예약 막기"; btn.classList.replace('btn-success', 'btn-danger'); }
+            if (isBookingBlocked) { btn.innerText = "전체 예약 열기"; btn.classList.replace('btn-danger', 'btn-success'); } 
+            else { btn.innerText = "전체 예약 막기"; btn.classList.replace('btn-success', 'btn-danger'); }
         }
 
         async function toggleBookingBlock() {
@@ -455,7 +455,7 @@
                 student_name: '관리자 차단', student_id: 9999, phone: '00000000000', purpose: purpose, password: 'admin',
                 room_name: room, start_time: start.toISOString(), end_time: end.toISOString(), status: 'blocked', is_priority: false
             }]);
-            if (!error) { alert("✅ 차단되었습니다."); bootstrap.Modal.getInstance(document.getElementById('blockModal')).hide(); load(); } 
+            if (!error) { alert("차단되었습니다."); bootstrap.Modal.getInstance(document.getElementById('blockModal')).hide(); load(); } 
         }
 
         async function openSuperAdmin() {
@@ -464,7 +464,7 @@
                 const newPw = prompt(`새롭게 변경할 비밀번호를 입력하세요.`);
                 if (newPw) {
                     const { error } = await _supabase.from('site_settings').update({ admin_password: newPw }).eq('id', 1);
-                    if (!error) { currentAdminPassword = newPw; alert(`✅ 관리자 비밀번호가 변경되었습니다.`); }
+                    if (!error) { currentAdminPassword = newPw; alert(`관리자 비밀번호가 변경되었습니다.`); }
                 }
             } else if (action === '2') {
                 if (confirm("⚠️ 전체 초기화를 진행하시겠습니까?")) {
